@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>虾铺开张中 · エピファネイア産駒データベース</title>
+<style>
+  :root{
+    --bg:#f6f5f0;
+    --card:#ffffff;
+    --ink:#20261f;
+    --muted:#7a8078;
+    --line:#e5e3da;
+    --brand:#1c4b32;
+    --brand2:#0e2f1e;
+    --gold:#b8912f;
+    --gold-soft:#f3ecdb;
+    --epi:#b8912f;   /* エピファネイア 金 */
+    --effo:#2e86ab;  /* エフフォーリア 蓝 */
+    --colt:#3b7bd4;  /* 牡 蓝 */
+    --filly:#d4568a; /* 牝 粉 */
+    --geld:#8a8f98;  /* セ 灰 */
+    --shadow:0 4px 18px rgba(30,45,35,.08);
+    --shadow-hover:0 12px 30px rgba(30,45,35,.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Hiragino Sans","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+
+  /* ===== 顶部 ===== */
+  .hero{
+    background:linear-gradient(140deg,#1c4b32 0%,#0e2f1e 55%,#0a2417 100%);
+    color:#fff;padding:44px 20px 60px;text-align:center;position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(700px 240px at 18% 0%,rgba(184,145,47,.28),transparent 60%),
+               radial-gradient(600px 220px at 82% 12%,rgba(46,134,171,.22),transparent 60%);
+  }
+  .tag{font-size:12px;letter-spacing:3px;opacity:.75;text-transform:uppercase}
+  h1{font-size:38px;font-weight:800;letter-spacing:1px;margin-top:6px}
+  .sub{opacity:.92;margin-top:8px;font-size:16px;font-weight:600}
+  .sub .ja{color:#e6c469}
+  .sub .effo{color:#7cc0e0}
+  .sub .mid{opacity:.5;margin:0 4px}
+  .stats{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:22px;position:relative;z-index:1;
+  }
+  .stat{
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);
+    padding:9px 16px;border-radius:12px;font-size:13.5px;backdrop-filter:blur(4px);
+  }
+  .stat b{font-size:17px;margin-right:4px}
+  .stat.epi{background:rgba(184,145,47,.2);border-color:rgba(230,196,105,.45)}
+  .stat.epi b{color:#e6c469}
+  .stat.effo b{color:#7cc0e0}
+  .search-wrap{max-width:600px;margin:24px auto 0;position:relative;z-index:1}
+  .search-wrap input{
+    width:100%;padding:15px 20px 15px 48px;border:none;border-radius:100px;
+    font-size:15.5px;outline:none;color:var(--ink);background:#fff;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .search-wrap .sicon{position:absolute;left:19px;top:50%;transform:translateY(-50%);opacity:.5;font-size:17px}
+
+  /* ===== 工具栏 ===== */
+  .toolbar{max-width:1180px;margin:-30px auto 0;padding:0 18px;position:relative;z-index:2}
+  .panel{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px 20px}
+  .frow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .frow + .frow{margin-top:12px}
+  .flabel{font-size:12.5px;color:var(--muted);font-weight:700;min-width:34px;letter-spacing:1px}
+  .chip{
+    border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:6px 13px;border-radius:100px;font-size:13px;cursor:pointer;
+    transition:.14s;user-select:none;line-height:1.4;
+  }
+  .chip:hover{border-color:var(--brand);color:var(--brand)}
+  .chip.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  select{
+    border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:7px 10px;border-radius:9px;font-size:13px;cursor:pointer;max-width:200px;outline:none;
+  }
+  select:focus{border-color:var(--brand)}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer;margin-left:4px}
+  .chk input{accent-color:var(--brand);width:15px;height:15px}
+  .spacer{flex:1}
+  .btn-plain{
+    border:1px solid var(--line);background:#fff;color:var(--muted);
+    padding:7px 14px;border-radius:9px;font-size:13px;cursor:pointer;transition:.14s;
+  }
+  .btn-plain:hover{color:var(--brand);border-color:var(--brand)}
+
+  /* ===== 控制条 ===== */
+  .controls{max-width:1180px;margin:14px auto 0;padding:0 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .count{font-size:13.5px;color:var(--muted)}
+  .count b{color:var(--brand)}
+  .view-toggle{margin-left:auto;display:inline-flex;background:var(--card);border-radius:10px;box-shadow:var(--shadow);padding:4px}
+  .view-toggle button{
+    border:none;background:transparent;padding:7px 16px;border-radius:8px;
+    font-size:13.5px;cursor:pointer;color:var(--muted);font-weight:600;transition:.14s;
+  }
+  .view-toggle button.active{background:var(--brand);color:#fff}
+
+  /* ===== 表格 ===== */
+  main{max-width:1180px;margin:16px auto 0;padding:0 18px}
+  .table-wrap{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:1150px}
+  thead th{
+    position:sticky;top:0;background:var(--brand);color:#fff;text-align:left;
+    padding:11px 12px;font-weight:600;white-space:nowrap;font-size:12.5px;letter-spacing:.5px;
+  }
+  thead th.sortable{cursor:pointer;user-select:none}
+  thead th.sortable:hover{background:#265c40}
+  thead th .arr{opacity:.7;font-size:10px;margin-left:3px}
+  tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody tr:hover{background:#faf9f5}
+  tbody tr:nth-child(even){background:#fbfaf6}
+  tbody tr:nth-child(even):hover{background:#f6f4ec}
+  .nm{font-weight:700;font-size:13.5px}
+  .en-col{color:#5a635c;font-size:13px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .dot.epi{background:var(--epi)}
+  .dot.effo{background:var(--effo)}
+  .sire-name{white-space:nowrap}
+  .sex{display:inline-block;padding:1px 8px;border-radius:100px;font-size:12px;font-weight:700;color:#fff}
+  .sex.colt{background:var(--colt)}
+  .sex.filly{background:var(--filly)}
+  .sex.geld{background:var(--geld)}
+  .rec{font-weight:700}
+  .rec.won{color:#0c7a3c}
+  .rec.none{color:var(--muted);font-weight:400}
+  .rec.zero{color:#c0392b}
+  .price{color:var(--muted);font-size:12px}
+
+  /* ===== 卡片 ===== */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:8px;transition:transform .16s,box-shadow .16s}
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover)}
+  .card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+  .card .nm{font-size:16px;margin-top:2px}
+  .card .en{color:var(--muted);font-size:12.5px;margin-top:-4px}
+  .card dl{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:12.5px;margin-top:2px}
+  .card dl div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
+  .card dl dt{color:var(--muted);white-space:nowrap}
+  .card dl dd{text-align:right;font-weight:600;overflow-wrap:anywhere}
+  .card-foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+  .card-foot .price{font-size:11.5px}
+
+  /* ===== 空状态 ===== */
+  #empty{text-align:center;padding:80px 20px;color:var(--muted)}
+  #empty .big{font-size:54px;margin-bottom:12px}
+  #empty[hidden]{display:none}
+
+  footer{text-align:center;color:var(--muted);font-size:12.5px;padding:34px 20px 42px}
+  footer a{color:var(--brand)}
+
+  @media (max-width:640px){
+    h1{font-size:30px}
+    .view-toggle{margin-left:0}
+  }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="tag">エピファネイア産駒データベース · Epiphaneia Progeny</div>
+    <h1>🦐 虾铺开张中</h1>
+    <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
+    <div class="stats" id="stats"></div>
+    <div class="search-wrap">
+      <span class="sicon">🔍</span>
+      <input type="search" id="search" placeholder="搜索马名 / 英文名 / 母名 / 母父 / 牧场 / 马主 / 调教师…">
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="panel">
+      <div class="frow">
+        <span class="flabel">种马</span>
+        <div id="sireChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="frow">
+        <span class="flabel">性别</span>
+        <div id="sexChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="frow">
+        <span class="flabel">毛色</span>
+        <div id="colorChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="frow">
+        <span class="flabel">牧场</span>
+        <select id="farmSel"></select>
+        <span class="flabel" style="margin-left:12px">马主</span>
+        <select id="ownerSel"></select>
+        <span class="flabel" style="margin-left:12px">调教师</span>
+        <select id="trainerSel"></select>
+        <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
+        <span class="spacer"></span>
+        <button class="btn-plain" id="resetBtn">↺ 重置筛选</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="count" id="count"></div>
+    <div class="view-toggle">
+      <button data-view="table" class="active">☰ 表格</button>
+      <button data-view="card">▦ 卡片</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="table-wrap" id="tableView">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="grid" id="cardView" hidden></div>
+    <div id="empty" hidden>
+      <div class="big">🔎</div>
+      <div>没有找到匹配的产驹，换个条件试试吧。</div>
+    </div>
+  </main>
+
+  <footer>
+    虾铺开张中 · 数据来源：netkeiba.com<br>
+    更新数据：改「种马数据.xlsx」后运行 <code>py build_site.py</code> 重新生成
+  </footer>
+
+<script src="data.js"></script>
+<script>
+  const data = 产驹数据;
+
+  // ---------- 工具 ----------
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
+  function parseRec(rec){
+    if(!rec) return {races:0, wins:0, raw:''};
+    const m = String(rec).match(/(\d+)\s*战\s*(\d+)\s*胜/);
+    if(m) return {races:+m[1], wins:+m[2], raw:String(rec)};
+    return {races:0, wins:0, raw:String(rec)};
+  }
+  function bdVal(bd){
+    if(bd == null) return 9999;
+    const m = String(bd).trim().match(/^(\d{1,2})\.(\d{1,2})$/);
+    if(m) return (+m[1])*31 + (+m[2]);
+    return 9999;
+  }
+  const sexClass = {牡:'colt', 牝:'filly', セ:'geld'};
+  const sexName = {牡:'牡', 牝:'牝', セ:'セ'};
+  const sireClass = {'エピファネイア':'epi', 'エフフォーリア':'effo'};
+  const sireLabel = {'エピファネイア':'エピファネイア（父）', 'エフフォーリア':'エフフォーリア（子）'};
+
+  // ---------- 状态 ----------
+  const state = {
+    q:'', sire:'全部', sex:'全部', color:'全部',
+    farm:'', owner:'', trainer:'',
+    winnerOnly:false,
+    sortKey:null, sortDir:1,
+    view:'table'
+  };
+
+  // ---------- 常量（筛选用的取值） ----------
+  const SIRES = ['エピファネイア','エフフォーリア'];
+  const SEXES = ['牡','牝','セ'];
+  const COLOR_ORDER = ['鹿毛','黒鹿毛','栗毛','青鹿毛','芦毛','青毛'];
+
+  function distinct(key){
+    const s = new Set();
+    data.forEach(h => { const v = h[key]; if(v) s.add(v); });
+    return [...s].sort((a,b)=>a.localeCompare(b,'ja'));
+  }
+
+  // ---------- 顶部统计 ----------
+  function renderStats(){
+    const epi = data.filter(h=>h.sire==='エピファネイア').length;
+    const effo = data.filter(h=>h.sire==='エフフォーリア').length;
+    const won = data.filter(h=>parseRec(h.rec).wins>0).length;
+    document.getElementById('stats').innerHTML = `
+      <span class="stat epi">🦐 店长 エピファネイア <b>${epi}</b></span>
+      <span class="stat effo">息子 エフフォーリア <b>${effo}</b></span>
+      <span class="stat">总产驹 <b>${data.length}</b> 匹</span>
+      <span class="stat">已获胜 <b>${won}</b></span>`;
+  }
+
+  // ---------- 筛选控件 ----------
+  function chipsHtml(values, stateKey, labelFn){
+    const items = ['全部', ...values];
+    return items.map(v => {
+      const active = state[stateKey] === v;
+      const label = (labelFn && labelFn(v)) || v;
+      return `<button class="chip${active?' active':''}" data-v="${esc(v)}">${esc(label)}</button>`;
+    }).join('');
+  }
+  function selectHtml(values){
+    let h = `<option value="">全部</option>`;
+    values.forEach(v => h += `<option value="${esc(v)}">${esc(v)}</option>`);
+    return h;
+  }
+  function renderFilters(){
+    document.getElementById('sireChips').innerHTML = chipsHtml(SIRES, 'sire', v => sireLabel[v]);
+    document.getElementById('sexChips').innerHTML = chipsHtml(SEXES, 'sex');
+    const colors = [...new Set([...COLOR_ORDER.filter(c=>data.some(h=>h.color===c)), ...distinct('color')])];
+    document.getElementById('colorChips').innerHTML = chipsHtml(colors, 'color');
+
+    const farmSel = document.getElementById('farmSel');
+    const ownerSel = document.getElementById('ownerSel');
+    const trainerSel = document.getElementById('trainerSel');
+    farmSel.innerHTML = selectHtml(distinct('farm'));
+    ownerSel.innerHTML = selectHtml(distinct('owner'));
+    trainerSel.innerHTML = selectHtml(distinct('trainer'));
+    farmSel.value = state.farm;
+    ownerSel.value = state.owner;
+    trainerSel.value = state.trainer;
+  }
+
+  // ---------- 筛选逻辑 ----------
+  function filtered(){
+    const q = state.q.trim().toLowerCase();
+    return data.filter(h => {
+      if(state.sire !== '全部' && h.sire !== state.sire) return false;
+      if(state.sex !== '全部' && h.sex !== state.sex) return false;
+      if(state.color !== '全部' && h.color !== state.color) return false;
+      if(state.farm && h.farm !== state.farm) return false;
+      if(state.owner && h.owner !== state.owner) return false;
+      if(state.trainer && h.trainer !== state.trainer) return false;
+      if(state.winnerOnly && parseRec(h.rec).wins < 1) return false;
+      if(q){
+        const hay = `${h.name||''} ${h.en||''} ${h.dam||''} ${h.bms||''} ${h.farm||''} ${h.owner||''} ${h.trainer||''}`.toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function sortVal(h, key){
+    if(key === 'rec'){ const p = parseRec(h.rec); return p.wins*1000 + p.races; }
+    if(key === 'bd') return bdVal(h.bd);
+    return String(h[key] == null ? '' : h[key]);
+  }
+  function sorted(list){
+    if(!state.sortKey) return list;
+    const key = state.sortKey, dir = state.sortDir;
+    return list.slice().sort((a,b)=>{
+      const va = sortVal(a,key), vb = sortVal(b,key);
+      if(va < vb) return -1*dir;
+      if(va > vb) return 1*dir;
+      return 0;
+    });
+  }
+
+  // ---------- 表格 ----------
+  const COLUMNS = [
+    {key:'name',   label:'马名'},
+    {key:'en',     label:'英字马名'},
+    {key:'sire',   label:'种马'},
+    {key:'sex',    label:'性别'},
+    {key:'color',  label:'毛色'},
+    {key:'bd',     label:'生日'},
+    {key:'dam',    label:'母名'},
+    {key:'bms',    label:'母父'},
+    {key:'farm',   label:'生产牧场'},
+    {key:'owner',  label:'马主'},
+    {key:'trainer',label:'调教师'},
+    {key:'raise',  label:'募集价格'},
+    {key:'auction',label:'拍卖价格'},
+    {key:'rec',    label:'成绩'},
+  ];
+
+  function renderThead(){
+    document.getElementById('thead').innerHTML = '<tr>' + COLUMNS.map(c => {
+      const isSort = state.sortKey === c.key;
+      const arr = isSort ? (state.sortDir === 1 ? '▲' : '▼') : '';
+      return `<th class="sortable" data-key="${c.key}">${c.label}<span class="arr">${arr}</span></th>`;
+    }).join('') + '</tr>';
+  }
+
+  function recCell(h){
+    const p = parseRec(h.rec);
+    let cls = 'rec';
+    if(!h.rec) cls += ' none';
+    else if(p.wins > 0) cls += ' won';
+    else cls += ' zero';
+    return `<td class="${cls}">${h.rec ? esc(h.rec) : '—'}</td>`;
+  }
+
+  function rowHtml(h){
+    const sc = sireClass[h.sire] || '';
+    const xc = sexClass[h.sex] || 'geld';
+    const xn = h.sex || '';
+    return `<tr>
+      <td><span class="nm">${esc(h.name||'')}</span></td>
+      <td class="en-col">${esc(h.en||'')}</td>
+      <td class="sire-name"><span class="dot ${sc}"></span>${esc(h.sire||'')}</td>
+      <td><span class="sex ${xc}">${esc(xn)}</span></td>
+      <td>${esc(h.color||'')}</td>
+      <td>${esc(h.bd||'')}</td>
+      <td>${esc(h.dam||'')}</td>
+      <td>${esc(h.bms||'')}</td>
+      <td>${esc(h.farm||'')}</td>
+      <td>${esc(h.owner||'')}</td>
+      <td>${esc(h.trainer||'')}</td>
+      <td class="price">${esc(h.raise||'')}</td>
+      <td class="price">${esc(h.auction||'')}</td>
+      ${recCell(h)}
+    </tr>`;
+  }
+
+  // ---------- 卡片 ----------
+  function cardHtml(h){
+    const p = parseRec(h.rec);
+    const sc = sireClass[h.sire] || '';
+    const xc = sexClass[h.sex] || 'geld';
+    let recCls = 'rec';
+    if(!h.rec) recCls += ' none';
+    else if(p.wins > 0) recCls += ' won';
+    else recCls += ' zero';
+    const extra = [];
+    if(h.raise) extra.push(`<span class="price">${esc(h.raise)}</span>`);
+    if(h.auction) extra.push(`<span class="price">${esc(h.auction)}</span>`);
+    return `<article class="card">
+      <div class="card-top">
+        <span class="dot ${sc}"></span><span class="sire-name">${esc(h.sire||'')}</span>
+        <span class="sex ${xc}">${esc(h.sex||'')}</span>
+        <span class="chip" style="cursor:default">${esc(h.color||'')}</span>
+      </div>
+      <div class="nm">${esc(h.name||'')}</div>
+      ${h.en?`<div class="en">${esc(h.en)}</div>`:''}
+      <dl>
+        <div><dt>生日</dt><dd>${esc(h.bd||'—')}</dd></div>
+        <div><dt>母名</dt><dd>${esc(h.dam||'—')}</dd></div>
+        <div><dt>母父</dt><dd>${esc(h.bms||'—')}</dd></div>
+        <div><dt>牧场</dt><dd>${esc(h.farm||'—')}</dd></div>
+        <div><dt>马主</dt><dd>${esc(h.owner||'—')}</dd></div>
+        <div><dt>调教师</dt><dd>${esc(h.trainer||'—')}</dd></div>
+      </dl>
+      <div class="card-foot">
+        <span class="${recCls}">${h.rec ? esc(h.rec) : '未出走'}</span>
+        ${extra.join('')}
+      </div>
+    </article>`;
+  }
+
+  // ---------- 渲染 ----------
+  function render(){
+    const list = sorted(filtered());
+    const countEl = document.getElementById('count');
+    countEl.innerHTML = `筛选出 <b>${list.length}</b> / ${data.length} 匹`;
+
+    const tableWrap = document.getElementById('tableView');
+    const cardView = document.getElementById('cardView');
+    const empty = document.getElementById('empty');
+
+    if(!list.length){
+      document.getElementById('tbody').innerHTML = '';
+      cardView.innerHTML = '';
+      tableWrap.hidden = state.view !== 'table';
+      cardView.hidden = state.view !== 'card';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+
+    if(state.view === 'table'){
+      tableWrap.hidden = false;
+      cardView.hidden = true;
+      document.getElementById('tbody').innerHTML = list.map(rowHtml).join('');
+    } else {
+      tableWrap.hidden = true;
+      cardView.hidden = false;
+      cardView.innerHTML = list.map(cardHtml).join('');
+    }
+  }
+
+  function renderAll(){ renderStats(); renderFilters(); renderThead(); render(); }
+
+  // ---------- 事件 ----------
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.q = e.target.value; render(); }, 150);
+  });
+
+  function chipClick(elId, key, value){
+    state[key] = value;
+    renderFilters();
+    render();
+  }
+  document.getElementById('sireChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if(!b) return;
+    chipClick('sireChips','sire', b.dataset.v);
+  });
+  document.getElementById('sexChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if(!b) return;
+    chipClick('sexChips','sex', b.dataset.v);
+  });
+  document.getElementById('colorChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if(!b) return;
+    chipClick('colorChips','color', b.dataset.v);
+  });
+
+  document.getElementById('farmSel').addEventListener('change', e => { state.farm = e.target.value; render(); });
+  document.getElementById('ownerSel').addEventListener('change', e => { state.owner = e.target.value; render(); });
+  document.getElementById('trainerSel').addEventListener('change', e => { state.trainer = e.target.value; render(); });
+  document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; render(); });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
+    state.farm=''; state.owner=''; state.trainer='';
+    state.winnerOnly=false; state.sortKey=null;
+    document.getElementById('search').value = '';
+    document.getElementById('winnerChk').checked = false;
+    renderAll();
+  });
+
+  document.getElementById('thead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-key]'); if(!th) return;
+    const key = th.dataset.key;
+    if(state.sortKey === key){
+      state.sortDir *= -1;
+    } else {
+      state.sortKey = key;
+      state.sortDir = (key === 'rec' || key === 'bd') ? -1 : 1;
+    }
+    renderThead(); render();
+  });
+
+  document.querySelector('.view-toggle').addEventListener('click', e => {
+    const b = e.target.closest('[data-view]'); if(!b) return;
+    state.view = b.dataset.view;
+    document.querySelectorAll('.view-toggle button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  });
+
+  renderAll();
+</script>
+</body>
+</html>

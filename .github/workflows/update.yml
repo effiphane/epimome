@@ -1,0 +1,39 @@
+name: 更新产驹数据
+
+on:
+  schedule:
+    # 每周一 01:30 UTC = 北京时间周一早上 09:30（比赛周末之后）
+    - cron: '30 1 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install requests beautifulsoup4
+
+      - name: 抓取并生成 data.js
+        run: python scrape_and_build.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.js
+          if git diff --cached --quiet; then
+            echo "数据无变化，跳过提交"
+          else
+            git commit -m "auto: 更新产驹数据"
+            git push
+          fi
