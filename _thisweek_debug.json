@@ -1,0 +1,332 @@
+{
+  "Epiphaneia": {
+    "标题": "エピファネイア\n            \n            産駒の出走情報｜競馬データベース - netkeiba",
+    "链接": [
+      {
+        "文字": "プレミアムサービス",
+        "href": "https://regist.netkeiba.com/?pid=premium&rf=header"
+      },
+      {
+        "文字": "お気に入り馬",
+        "href": "https://race.netkeiba.com/bookmark/bookmark.html?rf=navi"
+      },
+      {
+        "文字": "メモ",
+        "href": "https://race.netkeiba.com/notes/schedule.html?rf=navi"
+      },
+      {
+        "文字": "ログイン/会員登録",
+        "href": "https://regist.netkeiba.com/account/?pid=login"
+      },
+      {
+        "文字": "(s)ログイン",
+        "href": "https://regist.netkeiba.com/?pid=stage_login&action=login&re"
+      },
+      {
+        "文字": "(s)無料会員登録",
+        "href": "https://regist.netkeiba.com/?pid=user_add_form&payment=nk_us"
+      },
+      {
+        "文字": "(s)ログアウト",
+        "href": "https://regist.netkeiba.com/?pid=stage_login&action=logout&r"
+      },
+      {
+        "文字": "LIVE競輪",
+        "href": "https://keirin.netkeiba.com/?rf=nk_pc_header"
+      },
+      {
+        "文字": "トップ",
+        "href": "https://www.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "ニュース",
+        "href": "https://news.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "レース",
+        "href": "https://race.netkeiba.com/top/?rf=navi"
+      },
+      {
+        "文字": "A I",
+        "href": "https://race.netkeiba.com/AI/AI.html?rf=navi"
+      },
+      {
+        "文字": "予想",
+        "href": "https://yoso.netkeiba.com/?access=init&rf=navi"
+      },
+      {
+        "文字": "UMAIビルダー",
+        "href": "https://builder.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "コラム",
+        "href": "https://news.netkeiba.com/?pid=column_top&rf=navi"
+      },
+      {
+        "文字": "netkeibaTV",
+        "href": "https://tv.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "地方競馬",
+        "href": "https://nar.netkeiba.com/top/?rf=navi"
+      },
+      {
+        "文字": "データベース",
+        "href": "https://db.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "ショップ",
+        "href": "https://shop.netkeiba.com/?utm_source=netkeiba&utm_medium=+r"
+      },
+      {
+        "文字": "競馬新聞",
+        "href": "https://yoso.netkeiba.com/senmonshi/?rf=navi"
+      },
+      {
+        "文字": "俺プロ",
+        "href": "https://orepro.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "一口馬主",
+        "href": "https://owner.netkeiba.com/?pid=migration&rf=navi"
+      },
+      {
+        "文字": "POG",
+        "href": "https://pog.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "まとめ",
+        "href": "https://dir.netkeiba.com/keibamatome/index.html?rf=navi"
+      },
+      {
+        "文字": "イベント",
+        "href": "https://dir.netkeiba.com/event/?rf=navi"
+      },
+      {
+        "文字": "競馬データTOP",
+        "href": "https://db.netkeiba.com/"
+      },
+      {
+        "文字": "競走馬",
+        "href": "https://db.netkeiba.com/horse/top.html"
+      },
+      {
+        "文字": "騎手",
+        "href": "https://db.netkeiba.com/jockey/top.html"
+      },
+      {
+        "文字": "調教師",
+        "href": "https://db.netkeiba.com/trainer/top.html"
+      },
+      {
+        "文字": "馬主",
+        "href": "https://db.netkeiba.com/owner/top.html"
+      },
+      {
+        "文字": "生産者",
+        "href": "https://db.netkeiba.com/breeder/top.html"
+      },
+      {
+        "文字": "レース",
+        "href": "https://db.netkeiba.com/race/top.html"
+      },
+      {
+        "文字": "クラシック",
+        "href": "https://db.netkeiba.com/classic/"
+      },
+      {
+        "文字": "勝ち馬サーチ",
+        "href": "https://db.sp.netkeiba.com/winner_search/home"
+      },
+      {
+        "文字": "Epiphaneia",
+        "href": "https://en.netkeiba.com/db/horse/2010104155/"
+      },
+      {
+        "文字": "共有",
+        "href": ""
+      },
+      {
+        "文字": "お気に入り馬登録",
+        "href": "https://regist.netkeiba.com/account/?pid=login"
+      },
+      {
+        "文字": "...人",
+        "href": "https://db.netkeiba.com/social/horse_favorite_user_list.html"
+      },
+      {
+        "文字": "X",
+        "href": "https://twitter.com/share?text=_share_title_&url=_share_url_"
+      },
+      {
+        "文字": "Facebook",
+        "href": "https://www.facebook.com/sharer/sharer.php?u=_share_url_"
+      }
+    ]
+  },
+  "Efforia": {
+    "标题": "エフフォーリア\n            \n            産駒の出走情報｜競馬データベース - netkeiba",
+    "链接": [
+      {
+        "文字": "プレミアムサービス",
+        "href": "https://regist.netkeiba.com/?pid=premium&rf=header"
+      },
+      {
+        "文字": "お気に入り馬",
+        "href": "https://race.netkeiba.com/bookmark/bookmark.html?rf=navi"
+      },
+      {
+        "文字": "メモ",
+        "href": "https://race.netkeiba.com/notes/schedule.html?rf=navi"
+      },
+      {
+        "文字": "ログイン/会員登録",
+        "href": "https://regist.netkeiba.com/account/?pid=login"
+      },
+      {
+        "文字": "(s)ログイン",
+        "href": "https://regist.netkeiba.com/?pid=stage_login&action=login&re"
+      },
+      {
+        "文字": "(s)無料会員登録",
+        "href": "https://regist.netkeiba.com/?pid=user_add_form&payment=nk_us"
+      },
+      {
+        "文字": "(s)ログアウト",
+        "href": "https://regist.netkeiba.com/?pid=stage_login&action=logout&r"
+      },
+      {
+        "文字": "LIVE競輪",
+        "href": "https://keirin.netkeiba.com/?rf=nk_pc_header"
+      },
+      {
+        "文字": "トップ",
+        "href": "https://www.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "ニュース",
+        "href": "https://news.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "レース",
+        "href": "https://race.netkeiba.com/top/?rf=navi"
+      },
+      {
+        "文字": "A I",
+        "href": "https://race.netkeiba.com/AI/AI.html?rf=navi"
+      },
+      {
+        "文字": "予想",
+        "href": "https://yoso.netkeiba.com/?access=init&rf=navi"
+      },
+      {
+        "文字": "UMAIビルダー",
+        "href": "https://builder.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "コラム",
+        "href": "https://news.netkeiba.com/?pid=column_top&rf=navi"
+      },
+      {
+        "文字": "netkeibaTV",
+        "href": "https://tv.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "地方競馬",
+        "href": "https://nar.netkeiba.com/top/?rf=navi"
+      },
+      {
+        "文字": "データベース",
+        "href": "https://db.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "ショップ",
+        "href": "https://shop.netkeiba.com/?utm_source=netkeiba&utm_medium=+r"
+      },
+      {
+        "文字": "競馬新聞",
+        "href": "https://yoso.netkeiba.com/senmonshi/?rf=navi"
+      },
+      {
+        "文字": "俺プロ",
+        "href": "https://orepro.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "一口馬主",
+        "href": "https://owner.netkeiba.com/?pid=migration&rf=navi"
+      },
+      {
+        "文字": "POG",
+        "href": "https://pog.netkeiba.com/?rf=navi"
+      },
+      {
+        "文字": "まとめ",
+        "href": "https://dir.netkeiba.com/keibamatome/index.html?rf=navi"
+      },
+      {
+        "文字": "イベント",
+        "href": "https://dir.netkeiba.com/event/?rf=navi"
+      },
+      {
+        "文字": "競馬データTOP",
+        "href": "https://db.netkeiba.com/"
+      },
+      {
+        "文字": "競走馬",
+        "href": "https://db.netkeiba.com/horse/top.html"
+      },
+      {
+        "文字": "騎手",
+        "href": "https://db.netkeiba.com/jockey/top.html"
+      },
+      {
+        "文字": "調教師",
+        "href": "https://db.netkeiba.com/trainer/top.html"
+      },
+      {
+        "文字": "馬主",
+        "href": "https://db.netkeiba.com/owner/top.html"
+      },
+      {
+        "文字": "生産者",
+        "href": "https://db.netkeiba.com/breeder/top.html"
+      },
+      {
+        "文字": "レース",
+        "href": "https://db.netkeiba.com/race/top.html"
+      },
+      {
+        "文字": "クラシック",
+        "href": "https://db.netkeiba.com/classic/"
+      },
+      {
+        "文字": "勝ち馬サーチ",
+        "href": "https://db.sp.netkeiba.com/winner_search/home"
+      },
+      {
+        "文字": "Efforia",
+        "href": "https://en.netkeiba.com/db/horse/2018105027/"
+      },
+      {
+        "文字": "共有",
+        "href": ""
+      },
+      {
+        "文字": "お気に入り馬登録",
+        "href": "https://regist.netkeiba.com/account/?pid=login"
+      },
+      {
+        "文字": "...人",
+        "href": "https://db.netkeiba.com/social/horse_favorite_user_list.html"
+      },
+      {
+        "文字": "X",
+        "href": "https://twitter.com/share?text=_share_title_&url=_share_url_"
+      },
+      {
+        "文字": "Facebook",
+        "href": "https://www.facebook.com/sharer/sharer.php?u=_share_url_"
+      }
+    ]
+  }
+}
