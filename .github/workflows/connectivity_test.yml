@@ -1,0 +1,27 @@
+name: 连通性测试
+
+on:
+  push:
+    paths:
+      - '.github/workflows/connectivity_test.yml'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: studbook.jp
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 "https://www.studbook.jp/users/ja/Honba?sid=884563128")
+          echo "studbook.jp -> $code"
+          [ "$code" = "200" ] || exit 1
+      - name: jbis.or.jp
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 "https://www.jbis.or.jp/horse/0001124297/")
+          echo "jbis.or.jp -> $code"
+          [ "$code" = "200" ] || exit 1
+      - name: netkeiba
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 "https://db.netkeiba.com/horse/2021105143/")
+          echo "netkeiba -> $code"
+          [ "$code" = "200" ] || exit 1
