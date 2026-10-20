@@ -317,6 +317,37 @@ def scrape_horse(hid, ped_map):
     return detail
 
 
+def update_changelog(count):
+    """更新 updates.js 的"数据更新"列表"""
+    import datetime
+    today = datetime.date.today().isoformat()
+    entry = {'date': today, 'text': f'更新产驹数据（{count}匹）'}
+    func = []
+    data = [entry]
+    if os.path.exists('updates.js'):
+        with open('updates.js', encoding='utf-8') as f:
+            content = f.read()
+        m = re.search(r'const 功能更新 = (\[.*?\]);', content, re.S)
+        if m:
+            try:
+                func = json.loads(m.group(1))
+            except Exception:
+                func = []
+        m2 = re.search(r'const 数据更新 = (\[.*?\]);', content, re.S)
+        if m2:
+            try:
+                data = json.loads(m2.group(1))
+                if not data or data[0].get('date') != today:
+                    data = [entry] + data
+            except Exception:
+                data = [entry]
+    js = '// 数据更新由脚本自动维护；功能更新请手动编辑\n'
+    js += 'const 功能更新 = ' + json.dumps(func, ensure_ascii=False) + ';\n'
+    js += 'const 数据更新 = ' + json.dumps(data, ensure_ascii=False) + ';\n'
+    with open('updates.js', 'w', encoding='utf-8') as f:
+        f.write(js)
+
+
 def main():
     t0 = time.time()
     os.makedirs(PHOTO_DIR, exist_ok=True)
@@ -379,6 +410,7 @@ def main():
     with open('data.js', 'w', encoding='utf-8') as f:
         f.write(js)
     print('已写入 data.js', flush=True)
+    update_changelog(len(all_records))
 
 
 if __name__ == '__main__':

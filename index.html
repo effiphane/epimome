@@ -160,6 +160,20 @@
   footer{text-align:center;color:var(--muted);font-size:12.5px;padding:34px 20px 42px}
   footer a{color:var(--brand)}
 
+  /* ===== 更新日志 ===== */
+  #changelog{display:none}
+  body.show-log .hero,body.show-log .toolbar,body.show-log .controls,body.show-log main,body.show-log footer,body.show-log #detail{display:none}
+  body.show-log #changelog{display:block}
+  .log-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 16px;border-radius:100px;font-size:13px;cursor:pointer;margin-top:16px}
+  .log-btn:hover{background:rgba(255,255,255,.25)}
+  .log-wrap{max-width:760px;margin:0 auto;padding:24px 20px 60px}
+  .log-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:26px}
+  .log-card h2{font-size:22px;margin-bottom:4px}
+  .log-card h3{font-size:15px;margin:18px 0 10px;color:var(--brand)}
+  .log-list{list-style:none}
+  .log-list li{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px;line-height:1.5}
+  .log-date{display:inline-block;background:var(--gold-soft);color:#8a6d1f;font-size:12px;padding:1px 8px;border-radius:6px;margin-right:8px;font-weight:600}
+
   /* ===== 详情页 ===== */
   #detail{display:none}
   body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer{display:none}
@@ -228,6 +242,7 @@
     <h1>🦐 虾铺开张中</h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
     <div class="stats" id="stats"></div>
+    <button class="log-btn" id="logBtn">📋 更新日志</button>
     <div class="search-wrap">
       <span class="sicon">🔍</span>
       <input type="search" id="search" placeholder="搜索马名 / 英文名 / 母名 / 母父 / 牧场 / 马主 / 调教师…">
@@ -293,12 +308,23 @@
     </div>
   </section>
 
+  <section id="changelog">
+    <div class="log-wrap">
+      <button class="detail-back" id="logBackBtn">← 返回</button>
+      <div class="log-card">
+        <h2>📋 更新日志</h2>
+        <div id="logBody"></div>
+      </div>
+    </div>
+  </section>
+
   <footer>
     虾铺开张中 · 数据来源：netkeiba.com<br>
     更新数据：改「种马数据.xlsx」后运行 <code>py build_site.py</code> 重新生成
   </footer>
 
 <script src="data.js"></script>
+<script src="updates.js"></script>
 <script>
   const data = 产驹数据;
 
@@ -732,6 +758,25 @@
   });
   window.addEventListener('hashchange', route);
   route();
+
+  // ---------- 更新日志 ----------
+  function renderChangelog(){
+    const fe = (typeof 功能更新 !== 'undefined') ? 功能更新 : [];
+    const de = (typeof 数据更新 !== 'undefined') ? 数据更新 : [];
+    const listHtml = arr => arr.length ? arr.map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('') : '<li>暂无记录</li>';
+    document.getElementById('logBody').innerHTML = `
+      <h3>🛠 功能更新</h3><ul class="log-list">${listHtml(fe)}</ul>
+      <h3>🔄 数据更新</h3><ul class="log-list">${listHtml(de)}</ul>`;
+  }
+  document.getElementById('logBtn').addEventListener('click', () => {
+    document.body.classList.remove('show-detail');
+    document.body.classList.add('show-log');
+    renderChangelog();
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('logBackBtn').addEventListener('click', () => {
+    document.body.classList.remove('show-log');
+  });
 </script>
 </body>
 </html>
