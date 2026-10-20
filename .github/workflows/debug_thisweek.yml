@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/debug_thisweek.yml'
+      - '_debug_thisweek.py'
   workflow_dispatch: {}
 
 permissions:
