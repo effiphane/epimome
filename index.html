@@ -129,10 +129,13 @@
   .sex.colt{background:var(--colt)}
   .sex.filly{background:var(--filly)}
   .sex.geld{background:var(--geld)}
+  .status{display:inline-block;padding:1px 8px;border-radius:100px;font-size:11px;font-weight:700;color:#fff;margin-left:5px;vertical-align:middle}
+  .status.active{background:#0c7a3c}
+  .status.retired{background:#9aa0a6}
+  .status.breeding{background:var(--gold)}
+  .color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
   .rec{font-weight:700}
-  .rec.won{color:#0c7a3c}
   .rec.none{color:var(--muted);font-weight:400}
-  .rec.zero{color:#c0392b}
   .price{color:var(--muted);font-size:12px}
 
   /* ===== 卡片 ===== */
@@ -156,6 +159,61 @@
 
   footer{text-align:center;color:var(--muted);font-size:12.5px;padding:34px 20px 42px}
   footer a{color:var(--brand)}
+
+  /* ===== 详情页 ===== */
+  #detail{display:none}
+  body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer{display:none}
+  body.show-detail #detail{display:block}
+  .detail-wrap{max-width:1600px;margin:0 auto;padding:24px 20px 60px}
+  .detail-back{display:inline-block;background:var(--brand);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-size:14px;cursor:pointer;margin-bottom:18px;font-weight:600}
+  .detail-back:hover{background:var(--brand2)}
+  .detail-card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:26px}
+  .detail-head{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .detail-photo{flex:0 0 220px;max-width:220px}
+  .detail-photo img{width:100%;border-radius:14px;box-shadow:var(--shadow);display:block;background:#f0efe9}
+  .detail-main{flex:1;min-width:240px}
+  .detail-main h2{font-size:26px;font-weight:800;line-height:1.25}
+  .detail-main h2 .en{display:block;color:var(--muted);font-size:15px;font-weight:400;margin-top:2px}
+  .detail-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 26px;margin-top:16px}
+  .info-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding:8px 0;font-size:13.5px}
+  .info-row dt{color:var(--muted)}
+  .info-row dd{font-weight:600;text-align:right;overflow-wrap:anywhere}
+  .detail-rec{font-size:18px;margin-top:14px}
+  .detail-nk{display:inline-block;margin-top:14px;color:var(--brand);font-weight:600;font-size:14px}
+  .detail-nk:hover{text-decoration:underline}
+  .ped-box{margin-top:26px;border-top:1px solid var(--line);padding-top:20px;overflow-x:auto}
+  .ped-box h3{font-size:16px;margin-bottom:14px}
+  .ped-tree{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .ped-side{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fbfaf6}
+  .ped-side-label{display:inline-block;background:var(--gold-soft);color:#8a6d1f;font-weight:700;font-size:12px;padding:2px 10px;border-radius:100px;margin-bottom:8px}
+  .ped-side summary{cursor:pointer;font-size:13.5px;font-weight:600;list-style:none;padding:3px 0}
+  .ped-side summary::-webkit-details-marker{display:none}
+  .ped-side summary::before{content:'▸ ';color:var(--muted)}
+  .ped-side details[open]>summary::before{content:'▾ '}
+  .ped-side details details{margin-left:18px}
+  .ped-side a{color:var(--ink);text-decoration:none}
+  .ped-side a:hover{color:var(--brand);text-decoration:underline}
+  .ped-tag{display:inline-block;color:#fff;font-size:11px;padding:1px 7px;border-radius:6px;margin-right:6px;vertical-align:middle}
+  .ped-tag.f{background:var(--colt)}
+  .ped-tag.m{background:var(--filly)}
+  .ped-leaf{padding:2px 0 2px 18px;font-size:13px}
+  .ped-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .ped-table th{padding:5px 10px;text-align:left;background:var(--bg);color:var(--muted);font-size:11.5px;font-weight:600;white-space:nowrap}
+  .ped-table td{border:1px solid var(--line);padding:5px 10px;vertical-align:middle;white-space:nowrap}
+  .ped-table a{color:var(--ink);text-decoration:none}
+  .ped-table a:hover{color:var(--brand);text-decoration:underline}
+  .ped-table td.side-s{background:#eef3fb}
+  .ped-table td.side-d{background:#fbf0f4}
+  .nm.link{cursor:pointer;color:var(--brand);white-space:nowrap}
+  .nm.link:hover{text-decoration:underline}
+  .card{cursor:pointer}
+  .wins-box{margin-top:22px;border-top:1px solid var(--line);padding-top:18px;overflow-x:auto}
+  .wins-box h3{font-size:15px;margin-bottom:10px}
+  .wins-table{width:100%;border-collapse:collapse;font-size:13px}
+  .wins-table th{text-align:left;background:var(--bg);padding:7px 10px;font-size:12px;color:var(--muted);font-weight:600}
+  .wins-table td{padding:7px 10px;border-top:1px solid var(--line)}
+  .wins-table tr.won-row td{background:var(--gold-soft);font-weight:700}
 
   @media (max-width:640px){
     h1{font-size:30px}
@@ -197,6 +255,8 @@
         <select id="ownerSel"></select>
         <span class="flabel" style="margin-left:12px">调教师</span>
         <select id="trainerSel"></select>
+        <span class="flabel" style="margin-left:12px">年龄</span>
+        <select id="ageSel"></select>
         <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
         <span class="spacer"></span>
         <button class="btn-plain" id="resetBtn">↺ 重置筛选</button>
@@ -225,6 +285,13 @@
       <div>没有找到匹配的产驹，换个条件试试吧。</div>
     </div>
   </main>
+
+  <section id="detail">
+    <div class="detail-wrap">
+      <button class="detail-back" id="backBtn">← 返回列表</button>
+      <div id="detailBody"></div>
+    </div>
+  </section>
 
   <footer>
     虾铺开张中 · 数据来源：netkeiba.com<br>
@@ -257,11 +324,33 @@
   const sexName = {牡:'牡', 牝:'牝', セ:'セ'};
   const sireClass = {'エピファネイア':'epi', 'エフフォーリア':'effo'};
   const sireLabel = {'エピファネイア':'エピファネイア（父）', 'エフフォーリア':'エフフォーリア（子）'};
+  const currentYear = new Date().getFullYear();
+  function horseAge(h){ return (h.year != null) ? (currentYear - h.year) : null; }
+  function formatPrize(p){
+    if(p == null) return '';
+    if(p >= 10000) return (p/10000).toFixed(2) + '億';
+    return Math.round(p).toLocaleString() + '万';
+  }
+  function formatTrainer(t){
+    if(!t) return '';
+    if(t.length > 1 && /^[栗美地]/.test(t)) return t[0] + '・' + t.slice(1);
+    return t;
+  }
+  const statusClass = {'現役':'active', '退役':'retired', '退役・繁殖':'breeding'};
+  function statusBadge(s){
+    if(!s) return '';
+    return `<span class="status ${statusClass[s] || 'retired'}">${esc(s)}</span>`;
+  }
+  const coatColors = {'鹿毛':'#8b5a2b','黒鹿毛':'#4a2f1b','青鹿毛':'#3e2a1e','青毛':'#1a1a1a','栗毛':'#a0522d','芦毛':'#9e9e9e','白毛':'#dcdcdc','栃栗毛':'#c48a3d'};
+  function colorBadge(c){
+    if(!c) return '';
+    return `<span class="color-dot" style="background:${coatColors[c] || '#999'}"></span>${esc(c)}`;
+  }
 
   // ---------- 状态 ----------
   const state = {
     q:'', sire:'全部', sex:'全部', color:'全部',
-    farm:'', owner:'', trainer:'',
+    farm:'', owner:'', trainer:'', age:'',
     winnerOnly:false,
     sortKey:null, sortDir:1,
     view:'table'
@@ -319,6 +408,13 @@
     farmSel.value = state.farm;
     ownerSel.value = state.owner;
     trainerSel.value = state.trainer;
+
+    const ages = [...new Set(data.map(h => horseAge(h)).filter(a => a != null))].sort((a,b) => a-b);
+    const ageSel = document.getElementById('ageSel');
+    let ageHtml = '<option value="">全部</option>';
+    ages.forEach(a => ageHtml += `<option value="${a}">${a}岁</option>`);
+    ageSel.innerHTML = ageHtml;
+    ageSel.value = state.age;
   }
 
   // ---------- 筛选逻辑 ----------
@@ -331,6 +427,7 @@
       if(state.farm && h.farm !== state.farm) return false;
       if(state.owner && h.owner !== state.owner) return false;
       if(state.trainer && h.trainer !== state.trainer) return false;
+      if(state.age && horseAge(h) !== parseInt(state.age, 10)) return false;
       if(state.winnerOnly && parseRec(h.rec).wins < 1) return false;
       if(q){
         const hay = `${h.name||''} ${h.en||''} ${h.dam||''} ${h.bms||''} ${h.farm||''} ${h.owner||''} ${h.trainer||''}`.toLowerCase();
@@ -343,12 +440,17 @@
   function sortVal(h, key){
     if(key === 'rec'){ const p = parseRec(h.rec); return p.wins*1000 + p.races; }
     if(key === 'bd') return bdVal(h.bd);
+    if(key === 'age') return (h.year != null) ? (currentYear - h.year) : 9999;
+    if(key === 'prize') return (h.prize != null) ? h.prize : -1;
     return String(h[key] == null ? '' : h[key]);
   }
   function sorted(list){
     if(!state.sortKey) return list;
     const key = state.sortKey, dir = state.sortDir;
     return list.slice().sort((a,b)=>{
+      if(key === 'name'){
+        return String(a.name||'').localeCompare(String(b.name||''), 'ja') * dir;
+      }
       const va = sortVal(a,key), vb = sortVal(b,key);
       if(va < vb) return -1*dir;
       if(va > vb) return 1*dir;
@@ -364,6 +466,7 @@
     {key:'sex',    label:'性别'},
     {key:'color',  label:'毛色'},
     {key:'bd',     label:'生日'},
+    {key:'age',    label:'年龄'},
     {key:'dam',    label:'母名'},
     {key:'bms',    label:'母父'},
     {key:'farm',   label:'生产牧场'},
@@ -371,6 +474,7 @@
     {key:'trainer',label:'调教师'},
     {key:'raise',  label:'募集价格'},
     {key:'auction',label:'拍卖价格'},
+    {key:'prize',  label:'赏金'},
     {key:'rec',    label:'成绩'},
   ];
 
@@ -396,19 +500,21 @@
     const xc = sexClass[h.sex] || 'geld';
     const xn = h.sex || '';
     return `<tr>
-      <td><span class="nm">${esc(h.name||'')}</span></td>
+      <td><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(h.status)}</td>
       <td class="en-col">${esc(h.en||'')}</td>
       <td class="sire-name"><span class="dot ${sc}"></span>${esc(h.sire||'')}</td>
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
-      <td>${esc(h.color||'')}</td>
+      <td>${colorBadge(h.color)}</td>
       <td>${esc(h.bd||'')}</td>
+      <td>${horseAge(h) != null ? horseAge(h) + '岁' : '—'}</td>
       <td>${esc(h.dam||'')}</td>
       <td>${esc(h.bms||'')}</td>
       <td>${esc(h.farm||'')}</td>
       <td>${esc(h.owner||'')}</td>
-      <td>${esc(h.trainer||'')}</td>
+      <td>${esc(formatTrainer(h.trainer))}</td>
       <td class="price">${esc(h.raise||'')}</td>
       <td class="price">${esc(h.auction||'')}</td>
+      <td>${formatPrize(h.prize)}</td>
       ${recCell(h)}
     </tr>`;
   }
@@ -422,28 +528,17 @@
     if(!h.rec) recCls += ' none';
     else if(p.wins > 0) recCls += ' won';
     else recCls += ' zero';
-    const extra = [];
-    if(h.raise) extra.push(`<span class="price">${esc(h.raise)}</span>`);
-    if(h.auction) extra.push(`<span class="price">${esc(h.auction)}</span>`);
-    return `<article class="card">
+    return `<article class="card" data-id="${esc(h.id || h.name)}">
       <div class="card-top">
         <span class="dot ${sc}"></span><span class="sire-name">${esc(h.sire||'')}</span>
         <span class="sex ${xc}">${esc(h.sex||'')}</span>
-        <span class="chip" style="cursor:default">${esc(h.color||'')}</span>
+        ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
+        ${statusBadge(h.status)}
       </div>
       <div class="nm">${esc(h.name||'')}</div>
       ${h.en?`<div class="en">${esc(h.en)}</div>`:''}
-      <dl>
-        <div><dt>生日</dt><dd>${esc(h.bd||'—')}</dd></div>
-        <div><dt>母名</dt><dd>${esc(h.dam||'—')}</dd></div>
-        <div><dt>母父</dt><dd>${esc(h.bms||'—')}</dd></div>
-        <div><dt>牧场</dt><dd>${esc(h.farm||'—')}</dd></div>
-        <div><dt>马主</dt><dd>${esc(h.owner||'—')}</dd></div>
-        <div><dt>调教师</dt><dd>${esc(h.trainer||'—')}</dd></div>
-      </dl>
       <div class="card-foot">
         <span class="${recCls}">${h.rec ? esc(h.rec) : '未出走'}</span>
-        ${extra.join('')}
       </div>
     </article>`;
   }
@@ -509,11 +604,12 @@
   document.getElementById('farmSel').addEventListener('change', e => { state.farm = e.target.value; render(); });
   document.getElementById('ownerSel').addEventListener('change', e => { state.owner = e.target.value; render(); });
   document.getElementById('trainerSel').addEventListener('change', e => { state.trainer = e.target.value; render(); });
+  document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; render(); });
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; render(); });
 
   document.getElementById('resetBtn').addEventListener('click', () => {
     state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
-    state.farm=''; state.owner=''; state.trainer='';
+    state.farm=''; state.owner=''; state.trainer=''; state.age='';
     state.winnerOnly=false; state.sortKey=null;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
@@ -540,6 +636,102 @@
   });
 
   renderAll();
+
+  // ---------- 详情页 ----------
+  function findHorse(key){
+    return data.find(h => String(h.id) === String(key)) || data.find(h => h.name === key);
+  }
+  function renderPedTable(ped){
+    if(!ped) return '';
+    let level = [{n: ped.s, side: 's'}, {n: ped.d, side: 'd'}].filter(x => x.n);
+    const levels = [];
+    while(level.length && levels.length < 5){
+      levels.push(level.map(x => ({node: x.n, side: x.side})));
+      const next = [];
+      level.forEach(x => {
+        if(x.n && x.n.s) next.push({n: x.n.s, side: x.side});
+        if(x.n && x.n.d) next.push({n: x.n.d, side: x.side});
+      });
+      level = next;
+    }
+    const total = Math.pow(2, levels.length);
+    const header = '<tr>' + levels.map((_, g) => `<th>第${g + 1}代</th>`).join('') + '</tr>';
+    const rows = [];
+    for(let r = 0; r < total; r++){
+      const cells = [];
+      for(let g = 0; g < levels.length; g++){
+        const span = total / Math.pow(2, g + 1);
+        if(r % span === 0){
+          const item = levels[g][Math.floor(r / span)];
+          const link = item.node.i ? `https://db.netkeiba.com/horse/${item.node.i}/` : '#';
+          cells.push(`<td rowspan="${span}" class="side-${item.side}"><a href="${link}" target="_blank" rel="noopener">${esc(item.node.n)}</a></td>`);
+        }
+      }
+      rows.push(`<tr>${cells.join('')}</tr>`);
+    }
+    return `<table class="ped-table">${header}${rows.join('')}</table>`;
+  }
+  function openDetail(key){
+    const h = findHorse(key);
+    if(!h) return;
+    const p = parseRec(h.rec);
+    const sc = sireClass[h.sire] || '';
+    const xc = sexClass[h.sex] || 'geld';
+    let recCls = 'rec';
+    if(!h.rec) recCls += ' none'; else if(p.wins > 0) recCls += ' won'; else recCls += ' zero';
+    const nk = h.id ? `https://db.netkeiba.com/horse/${h.id}/` : '';
+    const photo = h.photo ? `<div class="detail-photo"><img src="${esc(h.photo)}" alt="${esc(h.name)}" onerror="this.parentElement.style.display='none'"></div>` : '';
+    const info = [
+      ['种马', h.sire], ['性别', h.sex], ['毛色', h.color], ['生日', h.bd],
+      ['母名', h.dam], ['母父', h.bms], ['生产牧场', h.farm], ['马主', h.owner],
+      ['调教师', formatTrainer(h.trainer)], ['募集价格', h.raise], ['拍卖价格', h.auction]
+    ].filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+    const ped = h.ped ? `<div class="ped-box"><h3>🌳 5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
+    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>🏁 比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr${r.pos === '1' ? ' class="won-row"' : ''}><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${esc(r.pos||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
+    document.getElementById('detailBody').innerHTML = `
+      <div class="detail-card">
+        <div class="detail-head">
+          ${photo}
+          <div class="detail-main">
+            <h2>${esc(h.name)}${h.en ? `<span class="en">${esc(h.en)}</span>` : ''}</h2>
+            <div class="detail-badges">
+              ${statusBadge(h.status)}
+              <span class="sex ${xc}">${esc(h.sex||'')}</span>
+              <span class="chip" style="cursor:default"><span class="dot ${sc}"></span>${esc(h.sire||'')}</span>
+              ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
+            </div>
+            <div class="detail-info">${info}</div>
+            ${h.rec ? `<div class="detail-rec ${recCls}">成绩：${esc(h.rec)}</div>` : ''}
+            ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
+          </div>
+        </div>
+        ${ped}
+        ${races}
+      </div>`;
+    document.body.classList.add('show-detail');
+    window.scrollTo(0, 0);
+  }
+  function closeDetail(){
+    document.body.classList.remove('show-detail');
+  }
+  function route(){
+    const m = location.hash.match(/^#\/horse\/(.+)$/);
+    if(m){ openDetail(decodeURIComponent(m[1])); } else { closeDetail(); }
+  }
+  document.getElementById('backBtn').addEventListener('click', () => {
+    history.replaceState(null, '', location.pathname + location.search);
+    closeDetail();
+  });
+  document.getElementById('tbody').addEventListener('click', e => {
+    const el = e.target.closest('[data-id]');
+    if(el) location.hash = '#/horse/' + encodeURIComponent(el.dataset.id);
+  });
+  document.getElementById('cardView').addEventListener('click', e => {
+    const el = e.target.closest('[data-id]');
+    if(el) location.hash = '#/horse/' + encodeURIComponent(el.dataset.id);
+  });
+  window.addEventListener('hashchange', route);
+  route();
 </script>
 </body>
 </html>

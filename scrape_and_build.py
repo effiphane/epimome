@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-netkeiba 产驹数据抓取 → 直接生成 data.js
+netkeiba 产驹数据抓取 → 生成 data.js + 下载照片到 photos/
+抓取内容：基本信息 + 马匹ID + 照片 + 5代血统
 用于 GitHub Actions 定时自动更新；也可本地运行：python scrape_and_build.py
 """
-import requests, re, time, json, sys
+import requests, re, time, json, sys, os, glob
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -16,6 +17,7 @@ SIRES_EN = {'エピファネイア': 'Epiphaneia', 'エフフォーリア': 'Eff
 WORKERS = 3
 DELAY = 0.4
 MIN_RECORDS = 1000  # 数据量异常时拒绝覆盖，防止把网站数据清空
+PHOTO_DIR = 'photos'
 
 
 def fetch(url):
@@ -72,6 +74,7 @@ def scrape_list(sire_id):
                 'bms': re.sub(r'\[\]$', '', link_text(8)).strip(),
                 'owner': cell_text(9),
                 'breeder': cell_text(10),
+                'prize': cell_text(11),
             }
 
         max_pg = page
@@ -88,11 +91,127 @@ def scrape_list(sire_id):
     return horses
 
 
-def scrape_detail(hid):
-    """详情页：拿到 英字名/生日(M.D)/毛色/拍卖价/募集价/成绩"""
-    r = fetch(f'https://db.netkeiba.com/horse/{hid}/')
+def clean_ped_name(text):
+    text = text.strip()
+    text = re.sub(r'\[.*?\]', '', text)
+    m = re.search(r'\d{4}|\d{1,2}-[a-z]|鹿毛|黒鹿毛|青鹿毛|青毛|栗毛|芦毛|白毛|栃栗毛', text)
+    if m:
+        text = text[:m.start()]
+    text = re.sub(r'\s*\([米英仏愛加豪独伊露葡新]+\)\s*$', '', text)
+    return text.strip()
+
+
+def parse_pedigree(table):
+    """把 netkeiba 血统表解析成嵌套树 {n:名字, i:id, s:父, d:母}"""
+    cells = []
+    for tr in table.find_all('tr'):
+        for td in tr.find_all('td'):
+            a = td.find('a')
+            if not a:
+                continue
+            text = td.get_text(strip=True)
+            m = re.search(r'/horse/([^/]+)/', a.get('href', ''))
+            hid = m.group(1) if m else ''
+            rs = td.get('rowspan', '') or '1'
+            cells.append({'n': clean_ped_name(text), 'i': hid, 'rs': int(rs)})
+
+    idx = [0]
+
+    def build():
+        node = cells[idx[0]]
+        idx[0] += 1
+        r = {'n': node['n'], 'i': node['i']}
+        if node['rs'] > 1:
+            r['s'] = build()
+            r['d'] = build()
+        return r
+
+    if not cells:
+        return None
+    sire = build()
+    dam = build() if idx[0] < len(cells) else None
+    return {'s': sire, 'd': dam}
+
+
+def parse_year(v):
+    if not v:
+        return None
+    m = re.search(r'\d{4}', str(v))
+    return int(m.group(0)) if m else None
+
+
+def parse_prize(v):
+    if not v:
+        return None
+    try:
+        return float(str(v).replace(',', '').strip())
+    except ValueError:
+        return None
+
+
+def scrape_results(hid):
+    """战绩页：抓取全部比赛履历"""
+    r = fetch(f'https://db.netkeiba.com/horse/result/{hid}/')
     if not r:
+        return []
+    soup = BeautifulSoup(r.text, 'html.parser')
+    table = soup.find('table', class_='db_h_race_results')
+    if not table:
+        return []
+    races = []
+    for tr in table.find_all('tr')[1:]:
+        cells = [c.get_text(strip=True) for c in tr.find_all('td')]
+        if len(cells) < 15:
+            continue
+        races.append({
+            'date': cells[0], 'venue': cells[1], 'race': cells[4],
+            'pos': cells[11], 'jockey': cells[12], 'dist': cells[14],
+        })
+    return races
+
+
+def extract_color(soup):
+    """从 horse_title 提取毛色"""
+    colors = ['黒鹿毛', '青鹿毛', '青毛', '鹿毛', '栗毛', '芦毛', '白毛', '栃栗毛']
+    title_div = soup.find('div', class_='horse_title')
+    if title_div:
+        txt01 = title_div.find('p', class_='txt_01')
+        if txt01:
+            txt = txt01.get_text(strip=True)
+            for c in colors:
+                if c in txt:
+                    return c
+    for table in soup.find_all('table'):
+        for tr in table.find_all('tr'):
+            th = tr.find('th')
+            td = tr.find('td')
+            if th and td and th.get_text(strip=True) == '毛色':
+                txt = td.get_text(strip=True)
+                for c in colors:
+                    if c in txt:
+                        return c
+    return None
+
+
+def detect_status(soup):
+    """判断马匹状态：現役 / 退役・繁殖 / 退役"""
+    txt = soup.get_text()
+    if '現役' in txt:
+        return '現役'
+    for a in soup.find_all('a', href=True):
+        if a.get_text(strip=True) in ('種牡馬', '繁殖牝馬'):
+            return '退役・繁殖'
+    if '抹消' in txt or '引退' in txt:
+        return '退役'
+    return None
+
+
+def scrape_detail(session, hid):
+    """详情页：拿到 英字名/生日/毛色/拍卖价/募集价/成绩/照片URL"""
+    r = session.get(f'https://db.netkeiba.com/horse/{hid}/', timeout=30)
+    if r.status_code != 200:
         return {}
+    r.encoding = 'euc-jp'
     soup = BeautifulSoup(r.text, 'html.parser')
     d = {}
 
@@ -102,13 +221,7 @@ def scrape_detail(hid):
         if m:
             d['en'] = m.group(1).strip()
 
-    h1 = soup.find('h1')
-    if h1:
-        txt = h1.get_text(strip=True)
-        for c in ['黒鹿毛', '青鹿毛', '青毛', '鹿毛', '栗毛', '芦毛', '白毛', '栃栗毛']:
-            if c in txt:
-                d['color'] = c
-                break
+    d['color'] = extract_color(soup)
 
     for table in soup.find_all('table'):
         for tr in table.find_all('tr'):
@@ -131,22 +244,94 @@ def scrape_detail(hid):
                 rec = re.sub(r'\s*\[.*\]', '', v)
                 rec = rec.replace('戦', '战').replace('勝', '胜')
                 d['rec'] = rec
+
+    for img in soup.find_all('img'):
+        src = img.get('src', '')
+        if 'show_photo.php' in src:
+            d['photo_url'] = src
+            break
+
+    d['status'] = detect_status(soup)
     return d
+
+
+def download_photo(session, hid, url):
+    """下载照片到 photos/，已存在则跳过"""
+    existing = glob.glob(os.path.join(PHOTO_DIR, f'{hid}.*'))
+    if existing:
+        return os.path.relpath(existing[0], '.').replace('\\', '/')
+    try:
+        r = session.get(url, timeout=30)
+        ct = r.headers.get('content-type', '')
+        if r.status_code == 200 and 'image' in ct:
+            ext = '.png' if 'png' in ct else ('.gif' if 'gif' in ct else '.jpg')
+            path = os.path.join(PHOTO_DIR, f'{hid}{ext}')
+            with open(path, 'wb') as f:
+                f.write(r.content)
+            return f'{PHOTO_DIR}/{hid}{ext}'
+    except Exception:
+        pass
+    return None
+
+
+def scrape_ped(hid):
+    """血统页：解析 5 代血统树"""
+    r = fetch(f'https://db.netkeiba.com/horse/ped/{hid}/')
+    if not r:
+        return None
+    soup = BeautifulSoup(r.text, 'html.parser')
+    tables = soup.find_all('table')
+    if not tables:
+        return None
+    return parse_pedigree(tables[0])
+
+
+def load_old_ped():
+    """从旧 data.js 读取血统映射（血统不变，可复用省请求）"""
+    ped_map = {}
+    try:
+        if not os.path.exists('data.js'):
+            return ped_map
+        with open('data.js', encoding='utf-8') as f:
+            content = f.read()
+        m = re.search(r'=\s*(\[.*\])\s*;', content, re.S)
+        if m:
+            old = json.loads(m.group(1))
+            for h in old:
+                if h.get('id') and h.get('ped'):
+                    ped_map[str(h['id'])] = h['ped']
+    except Exception:
+        pass
+    return ped_map
+
+
+def scrape_horse(hid, ped_map):
+    """一匹马：详情 + 照片下载 + 血统（可复用）+ 战绩"""
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    detail = scrape_detail(session, hid)
+    url = detail.pop('photo_url', None)
+    detail['photo'] = download_photo(session, hid, url) if url else None
+    detail['ped'] = ped_map.get(str(hid)) or scrape_ped(hid)
+    detail['races'] = scrape_results(hid)
+    return detail
 
 
 def main():
     t0 = time.time()
+    os.makedirs(PHOTO_DIR, exist_ok=True)
+    ped_map = load_old_ped()
     all_records = []
     for sire, sire_id in SIRES.items():
         print(f'== {sire} ({SIRES_EN[sire]}) ==', flush=True)
         horses = scrape_list(sire_id)
-        print(f'  抓取详情页 {len(horses)} 匹...', flush=True)
+        print(f'  抓取详情+血统+照片 {len(horses)} 匹...', flush=True)
 
         items = list(horses.items())
         detail_map = {}
         done = 0
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            futs = {ex.submit(scrape_detail, h['horse_id']): name for name, h in items}
+            futs = {ex.submit(scrape_horse, h['horse_id'], ped_map): name for name, h in items}
             for fut in as_completed(futs):
                 name = futs[fut]
                 try:
@@ -154,7 +339,7 @@ def main():
                 except Exception:
                     detail_map[name] = {}
                 done += 1
-                if done % 100 == 0:
+                if done % 50 == 0:
                     print(f'    {done}/{len(items)}', flush=True)
                 time.sleep(DELAY / WORKERS)
 
@@ -162,6 +347,7 @@ def main():
             det = detail_map.get(name, {})
             all_records.append({
                 'name': name,
+                'id': h['horse_id'],
                 'en': det.get('en'),
                 'dam': h['dam'] or None,
                 'bd': det.get('bd') or h['birth_year'] or None,
@@ -174,6 +360,12 @@ def main():
                 'raise': det.get('raise'),
                 'auction': det.get('auction'),
                 'rec': det.get('rec'),
+                'status': det.get('status'),
+                'photo': det.get('photo'),
+                'ped': det.get('ped'),
+                'year': parse_year(h['birth_year']),
+                'prize': parse_prize(h['prize']),
+                'races': det.get('races', []),
                 'sire': sire,
                 'sireEn': SIRES_EN[sire],
             })
