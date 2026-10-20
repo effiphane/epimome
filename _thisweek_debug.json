@@ -1,24 +1,36 @@
 {
-  "全文长度": 1178,
-  "全文前3000字": "エピファネイア\n            \n            産駒の出走情報｜競馬データベース - netkeiba プレミアムサービス お気に入り馬 メモ ログイン/会員登録 (s)ログイン (s)無料会員登録 (s)ログアウト LIVE 競輪 トップ ニュース レース A I 予想 UMAIビルダー コラム netkeibaTV 地方競馬 データベース ショップ 競馬新聞 俺プロ 一口馬主 POG まとめ イベント 競馬データTOP 競走馬 騎手 調教師 馬主 生産者 レース クラシック 勝ち馬サーチ エピファネイア Epiphaneia 抹消　牡　鹿毛 共有 お気に入り馬登録 ... 人 シェアする X Facebook LINE URLをコピー TOP 戦績 血統 種牡馬 掲示板 写真 メモ 調教 短評 コメント パドック映像 フォトパドック 個別ラップ 近況 出走産駒 オーナーズ 中央 地方 出走情報 10月17日〜10月18日 10月17日 (土) 東京4R 2歳新馬 結果確定 9 シリアスドラマ 津村 4番人気 7 出走情報を見る 10月18日 (日) 東京12R 甲斐路S 3勝 結果確定 1 ダノンエンブレム 原 12番人気 15 出走情報を見る 利用者数 1700 万人突破！ No.1 競馬サイト カテゴリ ニュース レース ウマい馬券 コラム netkeibaTV 地方競馬 データベース 俺プロ 一口馬主 POG 競馬広場 まとめ 競馬新聞 お気に入り馬 アカウント ヘルプ＆ガイド お知らせ プレミアムサービスのご案内 よくある質問・お問い合わせ のめり込む不安のある方へ netkeibaについて 採用情報 広告掲載について 利用規約 プライバシーポリシー 投稿ガイドライン 特定商取引法に基づく表記 ライセンス 運営会社 スマホでnetkeiba アプリでサクサクnetkeiba みんなで一緒に競馬を楽しもう! netkeibaを おすすめする URLリンクをコピーしました netkeiba公式SNS! netkeiba 公式競馬ゲーム みんなの愛馬とバトル！ うまいるスタジアム netkeiba 姉妹サイト 愛馬の管理はお任せ！ netkeibaオーナーズ 競輪総合メディア netkeirin(ネットケイリン) 関連メディア 徹底取材！野球情報は 週刊ベースボールONLINE ゴルフレッスン情報サイト ワッグルオンライン 小林カツ代直伝！ KATSUYOレシピ ソフトウェア・プロダクト もっともセキュアな店舗売上向上アプリ SMART会員証 サイト運営を劇的に効率化するCMS WEB SPIRAL © NET DREAMERS, Co., Ltd. All Rights Reserved.",
-  "HTML长度": 59466,
-  "horse链接": [
-    "https://db.netkeiba.com/horse/top.html",
-    "https://en.netkeiba.com/db/horse/2010104155/",
-    "https://db.netkeiba.com/horse/2010104155/",
-    "https://db.netkeiba.com/horse/result/2010104155/",
-    "https://db.netkeiba.com/horse/ped/2010104155/",
-    "https://db.netkeiba.com/horse/sire/2010104155/",
-    "https://db.netkeiba.com/horse/bbs/2010104155/",
-    "https://db.netkeiba.com/horse/notes.html?id=2010104155",
-    "https://db.netkeiba.com/horse/training.html?id=2010104155",
-    "https://db.netkeiba.com/horse/race_comment.html?id=201010415",
-    "https://db.netkeiba.com/horse/kyusya_comment.html?id=2010104",
-    "https://db.netkeiba.com/horse/paddock_movie.html?id=20101041",
-    "https://db.netkeiba.com/horse/photo_paddock.html?id=20101041",
-    "https://db.netkeiba.com/horse/horse_laptime.html?id=20101041",
-    "https://db.netkeiba.com/horse/2024105865/",
-    "https://db.netkeiba.com/horse/2022104893/"
+  "马匹链接数": 4,
+  "第一个马匹链接祖先链": [
+    {
+      "标签": "a",
+      "class": "",
+      "文本": "Epiphaneia"
+    },
+    {
+      "标签": "p",
+      "class": "['eng_name']",
+      "文本": "Epiphaneia"
+    },
+    {
+      "标签": "div",
+      "class": "['horse_title']",
+      "文本": "エピファネイアEpiphaneia抹消　牡　鹿毛"
+    },
+    {
+      "标签": "div",
+      "class": "['db_head_name', 'fc']",
+      "文本": "エピファネイアEpiphaneia抹消　牡　鹿毛共有お気に入り馬登録...人シェアするXFacebookLINEURLを"
+    },
+    {
+      "标签": "div",
+      "class": "['db_head', 'fc']",
+      "文本": "エピファネイアEpiphaneia抹消　牡　鹿毛共有お気に入り馬登録...人シェアするXFacebookLINEURLを"
+    },
+    {
+      "标签": "div",
+      "class": "['fc']",
+      "文本": "エピファネイアEpiphaneia抹消　牡　鹿毛共有お気に入り馬登録...人シェアするXFacebookLINEURLを"
+    }
   ],
-  "script数量": 35
+  "runner行HTML": "<div class=\"db_head_name fc\">\n<div class=\"horse_title\">\n<h1>エピファネイア</h1>\n<p class=\"eng_name\">\n<a href=\"https://en.netkeiba.com/db/horse/2010104155/\" style=\"color:#FFF;\">Epiphaneia</a>\n</p>\n<p class=\"txt_01\">抹消　牡　鹿毛 </p>\n</div><!-- /.horse_title\" -->\n<div class=\"HorseRegist_BtnBox fc\">\n<div class=\"ShereBtn\"><a href=\"\"><img alt=\"\" src=\"https://cdnv2.netkeiba.com/img.dbv2/common/image/db_head_btn_bg_01_shere.png\"/>共有</a></div>\n<!-- お気に入り登録ボタン -->\n<style>\n\t .func_to_like {\n\t     float: left;\n\t     padding-top: 2px;\n\t }\n\t</style>\n<ul>\n<li class=\"fav_regist fc\" id=\"HorseBookmarkLink\">\n<a href=\"https://regist.netkeiba.com/account/?pid=login\" title=\"お気に入り馬登録\">\n<img alt=\"\" src=\"https://cdnv2.netkeiba.com/img.dbv2/common/image/db_head_btn_bg_02_fav.png\"/>\n<span>お気に入り馬登録</span>\n</a>\n</li>\n</ul>\n<p class=\"fav_user_count\"><a class=\"\" href=\"https://db.netkeiba.com/social/horse_favorite_user_list.html?id=2010104155\" title=\"登録者一覧\"><span id=\"o-bookmark_count\">...</span>人</a></p>\n<!-- お気に入り登録ボタン -->\n</div><!-- /.HorseRegist_BtnBox -->\n<div class=\"SherePopup01\">\n<span class=\"PopupTitle01\">シェアする</span>\n<span class=\"SherePopupCloseBtn\"></span>\n<ul class=\"ShereMenuList\">\n<li>\n<a class=\"Sns_Btn\" href=\"https://twitter.com/share?text=_share_title_&amp;url=_share_url_\" id=\"sns_twitter\" rel=\"nofollow\" target=\"_blank\">\n<span class=\"ShereIcon TwIcon\"></span>\n<span>X</span>\n</a>\n</li>\n<li>\n<a class=\"Sns_Btn\" href=\"https://www.facebook.com/sharer/sharer.php?u=_share_url_\" id=\"sns_facebook\" target=\"_blank\">\n<span class=\"ShereIcon FbIcon\"></span>\n<span>Facebook</span>\n</a>\n</li>\n<li>\n<a class=\"Sns_Btn\" href=\"https://social-plugins.line.me/lineit/share?url=_share_url_&amp;text=_share_title_\" id=\"sns_line\" target=\"_blank\">\n<span class=\"ShereIcon LineIcon\"></span>\n<span>LINE</span>\n</a>\n</li>\n<li>\n<a class=\"Sns_Btn\" href=\"javascript:void(0);\" onclick=\"clipURL();\">\n<span class=\"ShereIcon CopyIcon\"></span>\n<span>URLをコピー</span>\n</a>\n</li>\n</ul>\n<script>\n\t function clipURL() {\n\t     $('body').append('<tex"
 }
