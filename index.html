@@ -183,6 +183,18 @@
   .log-list li{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px;line-height:1.5}
   .log-date{display:inline-block;background:var(--gold-soft);color:#8a6d1f;font-size:12px;padding:1px 8px;border-radius:6px;margin-right:8px;font-weight:600}
 
+  /* ===== 本周出马 ===== */
+  #thisweek{display:none}
+  body.show-tw .hero,body.show-tw .toolbar,body.show-tw .controls,body.show-tw main,body.show-tw footer,body.show-tw #detail,body.show-tw #changelog{display:none}
+  body.show-tw #thisweek{display:block}
+  .tw-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+  .tw-table th{text-align:left;background:var(--bg);padding:7px 10px;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .tw-table td{padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+  .tw-day{font-size:15px;color:var(--brand);margin:16px 0 8px;font-weight:700}
+  .tw-name{color:var(--brand);font-weight:600;text-decoration:none}
+  .tw-name:hover{text-decoration:underline}
+  .tw-status{font-size:11px;color:var(--muted);margin-top:2px}
+
   /* ===== 详情页 ===== */
   #detail{display:none}
   body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer{display:none}
@@ -251,6 +263,7 @@
     <h1>🦐 虾铺开张中</h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
     <div class="stats" id="stats"></div>
+    <button class="log-btn" id="twBtn">🏇 本周出马</button>
     <button class="log-btn" id="logBtn">📋 更新日志</button>
     <div class="search-wrap">
       <span class="sicon">🔍</span>
@@ -322,6 +335,16 @@
     </div>
   </section>
 
+  <section id="thisweek">
+    <div class="log-wrap">
+      <button class="detail-back" id="twBackBtn">← 返回</button>
+      <div class="log-card">
+        <h2>🏇 本周出马</h2>
+        <div id="thisweekBody"></div>
+      </div>
+    </div>
+  </section>
+
   <footer>
     虾铺开张中 · 数据来源：netkeiba.com<br>
     更新数据：改「种马数据.xlsx」后运行 <code>py build_site.py</code> 重新生成
@@ -329,6 +352,7 @@
 
 <script src="data.js"></script>
 <script src="updates.js"></script>
+<script src="thisweek.js"></script>
 <script>
   const data = 产驹数据;
   const PER_PAGE = 20;
@@ -742,6 +766,7 @@
         ${ped}
         ${races}
       </div>`;
+    document.body.classList.remove('show-log', 'show-tw');
     document.body.classList.add('show-detail');
     window.scrollTo(0, 0);
   }
@@ -784,6 +809,46 @@
   });
   document.getElementById('logBackBtn').addEventListener('click', () => {
     document.body.classList.remove('show-log');
+  });
+
+  // ---------- 本周出马 ----------
+  function renderThisweek(){
+    const list = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const el = document.getElementById('thisweekBody');
+    if(!list.length){
+      el.innerHTML = '<p style="color:var(--muted);padding:20px 0">本周暂无产驹出赛。</p>';
+      return;
+    }
+    const byDate = {};
+    list.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
+    let html = '';
+    for(const date of Object.keys(byDate)){
+      html += `<div class="tw-day">${esc(date)}</div>`;
+      html += '<table class="tw-table"><thead><tr><th>赛事</th><th>马名</th><th>骑手</th><th>人気</th><th>着順</th><th>种马</th><th>地区</th></tr></thead><tbody>';
+      byDate[date].forEach(r => {
+        const sc = sireClass[r.sire] || '';
+        html += `<tr>
+          <td>${esc(r.race||'')}${r.status ? `<div class="tw-status">${esc(r.status)}</div>` : ''}</td>
+          <td><a class="tw-name" href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name||'')}</a></td>
+          <td>${esc(r.jockey||'')}</td>
+          <td>${esc(r.fav||'')}</td>
+          <td>${esc(r.order||'')}</td>
+          <td><span class="dot ${sc}"></span>${esc(r.sire||'')}</td>
+          <td>${esc(r.region||'')}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+    }
+    el.innerHTML = html;
+  }
+  document.getElementById('twBtn').addEventListener('click', () => {
+    document.body.classList.remove('show-detail', 'show-log');
+    document.body.classList.add('show-tw');
+    renderThisweek();
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('twBackBtn').addEventListener('click', () => {
+    document.body.classList.remove('show-tw');
   });
 </script>
 </body>

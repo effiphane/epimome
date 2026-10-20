@@ -348,6 +348,61 @@ def update_changelog(count):
         f.write(js)
 
 
+def scrape_thisweek():
+    """抓取本周出马（两个种马 × 中央/地方）"""
+    runners = []
+    for sire, sire_id in SIRES.items():
+        for rtype, region in (('1', '中央'), ('2', '地方')):
+            url = f'https://db.netkeiba.com/sire/thisweek/{sire_id}/?type={rtype}'
+            r = fetch(url)
+            if not r:
+                continue
+            soup = BeautifulSoup(r.text, 'html.parser')
+            for block in soup.find_all('section', class_='EntryHorseList_Block'):
+                day_el = block.find('h3', class_='EntryHorseList_Day')
+                day = day_el.get_text(strip=True) if day_el else ''
+                for race_block in block.find_all('section', class_='EntryHorseList_RaceBlock'):
+                    info = race_block.find('div', class_='EntryHorseList_RaceInfo')
+                    race_num = race_name = race_status = ''
+                    if info:
+                        rn = info.find('span', class_='EntryHorseList_RaceNum')
+                        race_num = rn.get_text(strip=True) if rn else ''
+                        rnm = info.find('span', class_='EntryHorseList_RaceName')
+                        race_name = rnm.get_text(strip=True) if rnm else ''
+                        rs = info.find('span', class_='EntryHorseList_RaceStatus')
+                        race_status = rs.get_text(strip=True) if rs else ''
+                    for li in race_block.find_all('li'):
+                        na = li.find('a', class_='EntryHorseList_HorseName')
+                        if not na:
+                            continue
+                        name = na.get_text(strip=True)
+                        m = re.search(r'/horse/(\d+)/', na.get('href', ''))
+                        hid = m.group(1) if m else ''
+                        j_el = li.find('span', class_='EntryHorseList_Jockey')
+                        jockey = j_el.get_text(strip=True) if j_el else ''
+                        f_el = li.find('span', class_='EntryHorseList_Favorite')
+                        fav = f_el.get_text(strip=True) if f_el else ''
+                        o_el = li.find('span', class_='EntryHorseList_Order')
+                        order = o_el.get_text(strip=True) if o_el else ''
+                        n_el = li.find('div', class_='PcHorseNo')
+                        num = n_el.get_text(strip=True) if n_el else ''
+                        runners.append({
+                            'date': day, 'race': f'{race_num} {race_name}'.strip(),
+                            'status': race_status, 'name': name, 'id': hid,
+                            'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
+                            'sire': sire, 'region': region,
+                        })
+    return runners
+
+
+def write_thisweek(runners):
+    js = '// 本文件由 scrape_and_build.py 自动生成\nconst 本周出马 = ' + \
+        json.dumps(runners, ensure_ascii=False) + ';\n'
+    with open('thisweek.js', 'w', encoding='utf-8') as f:
+        f.write(js)
+    print(f'已写入 thisweek.js（{len(runners)} 匹出赛）', flush=True)
+
+
 def main():
     t0 = time.time()
     os.makedirs(PHOTO_DIR, exist_ok=True)
@@ -411,6 +466,7 @@ def main():
         f.write(js)
     print('已写入 data.js', flush=True)
     update_changelog(len(all_records))
+    write_thisweek(scrape_thisweek())
 
 
 if __name__ == '__main__':
