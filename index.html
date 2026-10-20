@@ -131,10 +131,10 @@
   .sex.geld{background:var(--geld)}
   .status{display:inline-block;padding:1px 8px;border-radius:100px;font-size:11px;font-weight:700;color:#fff;margin-left:5px;vertical-align:middle}
   .status.active{background:#0c7a3c}
-  .status.retired{background:#9aa0a6}
+  .status.retired{background:#6b7280}
   .status.breeding{background:var(--gold)}
   .status.local{background:#7c5cbf}
-  .status.unregistered{background:#b5b9bf}
+  .status.unregistered{background:#a0866b}
   .color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
   .rec{font-weight:700}
   .rec.none{color:var(--muted);font-weight:400}
@@ -261,10 +261,6 @@
   <div class="toolbar">
     <div class="panel">
       <div class="frow">
-        <span class="flabel">种马</span>
-        <div id="sireChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-      </div>
-      <div class="frow">
         <span class="flabel">性别</span>
         <div id="sexChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
@@ -273,13 +269,7 @@
         <div id="colorChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
       <div class="frow">
-        <span class="flabel">牧场</span>
-        <select id="farmSel"></select>
-        <span class="flabel" style="margin-left:12px">马主</span>
-        <select id="ownerSel"></select>
-        <span class="flabel" style="margin-left:12px">调教师</span>
-        <select id="trainerSel"></select>
-        <span class="flabel" style="margin-left:12px">年龄</span>
+        <span class="flabel">年龄</span>
         <select id="ageSel"></select>
         <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
         <span class="spacer"></span>
@@ -378,14 +368,14 @@
     if(t.length > 1 && /^[栗美地]/.test(t)) return t[0] + '・' + t.slice(1);
     return t;
   }
-  const statusClass = {'現役':'active', '退役':'retired', '退役・繁殖':'breeding', '退役・地方':'local', '未登录':'unregistered'};
+  const statusClass = {'現役':'active', '退役':'retired', '退役・繁殖':'breeding', '地方':'local', '未登录':'unregistered'};
   function statusBadge(s){
     if(!s) return '';
     return `<span class="status ${statusClass[s] || 'retired'}">${esc(s)}</span>`;
   }
   function horseStatus(h){
     if(h.status) return h.status;
-    if(h.trainer && /^\[?地/.test(h.trainer)) return '退役・地方';
+    if(h.trainer && /^\[?地/.test(h.trainer)) return '地方';
     return '未登录';
   }
   const coatColors = {'鹿毛':'#8b5a2b','黒鹿毛':'#4a2f1b','青鹿毛':'#3e2a1e','青毛':'#1a1a1a','栗毛':'#a0522d','芦毛':'#9e9e9e','白毛':'#dcdcdc','栃栗毛':'#c48a3d'};
@@ -441,20 +431,9 @@
     return h;
   }
   function renderFilters(){
-    document.getElementById('sireChips').innerHTML = chipsHtml(SIRES, 'sire', v => sireLabel[v]);
     document.getElementById('sexChips').innerHTML = chipsHtml(SEXES, 'sex');
     const colors = [...new Set([...COLOR_ORDER.filter(c=>data.some(h=>h.color===c)), ...distinct('color')])];
     document.getElementById('colorChips').innerHTML = chipsHtml(colors, 'color');
-
-    const farmSel = document.getElementById('farmSel');
-    const ownerSel = document.getElementById('ownerSel');
-    const trainerSel = document.getElementById('trainerSel');
-    farmSel.innerHTML = selectHtml(distinct('farm'));
-    ownerSel.innerHTML = selectHtml(distinct('owner'));
-    trainerSel.innerHTML = selectHtml(distinct('trainer'));
-    farmSel.value = state.farm;
-    ownerSel.value = state.owner;
-    trainerSel.value = state.trainer;
 
     const ages = [...new Set(data.map(h => horseAge(h)).filter(a => a != null))].sort((a,b) => a-b);
     const ageSel = document.getElementById('ageSel');
@@ -522,11 +501,13 @@
     {key:'rec',    label:'成绩'},
   ];
 
+  const NON_SORTABLE = new Set(['sex', 'color', 'dam', 'bms', 'trainer', 'farm', 'raise', 'auction', 'rec']);
   function renderThead(){
     document.getElementById('thead').innerHTML = '<tr>' + COLUMNS.map(c => {
+      const sortable = !NON_SORTABLE.has(c.key);
       const isSort = state.sortKey === c.key;
       const arr = isSort ? (state.sortDir === 1 ? '▲' : '▼') : '';
-      return `<th class="sortable" data-key="${c.key}">${c.label}<span class="arr">${arr}</span></th>`;
+      return `<th${sortable ? ' class="sortable"' : ''} data-key="${c.key}">${c.label}<span class="arr">${arr}</span></th>`;
     }).join('') + '</tr>';
   }
 
@@ -640,10 +621,6 @@
     renderFilters();
     render();
   }
-  document.getElementById('sireChips').addEventListener('click', e => {
-    const b = e.target.closest('[data-v]'); if(!b) return;
-    chipClick('sireChips','sire', b.dataset.v);
-  });
   document.getElementById('sexChips').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if(!b) return;
     chipClick('sexChips','sex', b.dataset.v);
@@ -653,9 +630,6 @@
     chipClick('colorChips','color', b.dataset.v);
   });
 
-  document.getElementById('farmSel').addEventListener('change', e => { state.farm = e.target.value; state.page = 1; render(); });
-  document.getElementById('ownerSel').addEventListener('change', e => { state.owner = e.target.value; state.page = 1; render(); });
-  document.getElementById('trainerSel').addEventListener('change', e => { state.trainer = e.target.value; state.page = 1; render(); });
   document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; state.page = 1; render(); });
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
 
@@ -671,6 +645,7 @@
   document.getElementById('thead').addEventListener('click', e => {
     const th = e.target.closest('th[data-key]'); if(!th) return;
     const key = th.dataset.key;
+    if(NON_SORTABLE.has(key)) return;
     if(state.sortKey === key){
       state.sortDir *= -1;
     } else {
