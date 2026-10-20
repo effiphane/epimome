@@ -115,7 +115,7 @@
   thead th.sortable{cursor:pointer;user-select:none}
   thead th.sortable:hover{background:#265c40}
   thead th .arr{opacity:.7;font-size:10px;margin-left:3px}
-  tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap}
   tbody tr:hover{background:#faf9f5}
   tbody tr:nth-child(even){background:#fbfaf6}
   tbody tr:nth-child(even):hover{background:#f6f4ec}
@@ -133,6 +133,8 @@
   .status.active{background:#0c7a3c}
   .status.retired{background:#9aa0a6}
   .status.breeding{background:var(--gold)}
+  .status.local{background:#7c5cbf}
+  .status.unregistered{background:#b5b9bf}
   .color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
   .rec{font-weight:700}
   .rec.none{color:var(--muted);font-weight:400}
@@ -359,13 +361,19 @@
   }
   function formatTrainer(t){
     if(!t) return '';
+    t = t.replace(/^\[地\]/, '地');
     if(t.length > 1 && /^[栗美地]/.test(t)) return t[0] + '・' + t.slice(1);
     return t;
   }
-  const statusClass = {'現役':'active', '退役':'retired', '退役・繁殖':'breeding'};
+  const statusClass = {'現役':'active', '退役':'retired', '退役・繁殖':'breeding', '退役・地方':'local', '未登录':'unregistered'};
   function statusBadge(s){
     if(!s) return '';
     return `<span class="status ${statusClass[s] || 'retired'}">${esc(s)}</span>`;
+  }
+  function horseStatus(h){
+    if(h.status) return h.status;
+    if(h.trainer && /^\[?地/.test(h.trainer)) return '退役・地方';
+    return '未登录';
   }
   const coatColors = {'鹿毛':'#8b5a2b','黒鹿毛':'#4a2f1b','青鹿毛':'#3e2a1e','青毛':'#1a1a1a','栗毛':'#a0522d','芦毛':'#9e9e9e','白毛':'#dcdcdc','栃栗毛':'#c48a3d'};
   function colorBadge(c){
@@ -488,15 +496,12 @@
   const COLUMNS = [
     {key:'name',   label:'马名'},
     {key:'en',     label:'英字马名'},
-    {key:'sire',   label:'种马'},
     {key:'sex',    label:'性别'},
     {key:'color',  label:'毛色'},
     {key:'bd',     label:'生日'},
     {key:'age',    label:'年龄'},
     {key:'dam',    label:'母名'},
     {key:'bms',    label:'母父'},
-    {key:'farm',   label:'生产牧场'},
-    {key:'owner',  label:'马主'},
     {key:'trainer',label:'调教师'},
     {key:'raise',  label:'募集价格'},
     {key:'auction',label:'拍卖价格'},
@@ -526,17 +531,14 @@
     const xc = sexClass[h.sex] || 'geld';
     const xn = h.sex || '';
     return `<tr>
-      <td><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(h.status)}</td>
+      <td><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(horseStatus(h))}</td>
       <td class="en-col">${esc(h.en||'')}</td>
-      <td class="sire-name"><span class="dot ${sc}"></span>${esc(h.sire||'')}</td>
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
       <td>${colorBadge(h.color)}</td>
       <td>${esc(h.bd||'')}</td>
       <td>${horseAge(h) != null ? horseAge(h) + '岁' : '—'}</td>
       <td>${esc(h.dam||'')}</td>
       <td>${esc(h.bms||'')}</td>
-      <td>${esc(h.farm||'')}</td>
-      <td>${esc(h.owner||'')}</td>
       <td>${esc(formatTrainer(h.trainer))}</td>
       <td class="price">${esc(h.raise||'')}</td>
       <td class="price">${esc(h.auction||'')}</td>
@@ -559,7 +561,7 @@
         <span class="dot ${sc}"></span><span class="sire-name">${esc(h.sire||'')}</span>
         <span class="sex ${xc}">${esc(h.sex||'')}</span>
         ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
-        ${statusBadge(h.status)}
+        ${statusBadge(horseStatus(h))}
       </div>
       <div class="nm">${esc(h.name||'')}</div>
       ${h.en?`<div class="en">${esc(h.en)}</div>`:''}
@@ -721,7 +723,7 @@
           <div class="detail-main">
             <h2>${esc(h.name)}${h.en ? `<span class="en">${esc(h.en)}</span>` : ''}</h2>
             <div class="detail-badges">
-              ${statusBadge(h.status)}
+              ${statusBadge(horseStatus(h))}
               <span class="sex ${xc}">${esc(h.sex||'')}</span>
               <span class="chip" style="cursor:default"><span class="dot ${sc}"></span>${esc(h.sire||'')}</span>
               ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}

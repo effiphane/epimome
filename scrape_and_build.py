@@ -69,7 +69,7 @@ def scrape_list(sire_id):
                 'horse_id': m.group(1),
                 'sex': cell_text(2),
                 'birth_year': cell_text(3),
-                'trainer': cell_text(5).replace('[西]', '栗').replace('[東]', '美'),
+                'trainer': cell_text(5).replace('[西]', '栗').replace('[東]', '美').replace('[地]', '地'),
                 'dam': re.sub(r'\[\]$', '', link_text(7)).strip(),
                 'bms': re.sub(r'\[\]$', '', link_text(8)).strip(),
                 'owner': cell_text(9),
