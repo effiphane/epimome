@@ -154,6 +154,13 @@
   .card-foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
   .card-foot .price{font-size:11.5px}
 
+  /* ===== 分页 ===== */
+  .pagination{display:flex;align-items:center;justify-content:center;gap:16px;margin:20px 0;flex-wrap:wrap}
+  .pagination button{background:var(--brand);color:#fff;border:none;padding:8px 18px;border-radius:9px;font-size:13.5px;cursor:pointer;font-weight:600}
+  .pagination button:disabled{background:#c8ccc8;cursor:not-allowed}
+  .pagination .page-info{font-size:13.5px;color:var(--muted)}
+  .pagination .page-info b{color:var(--brand)}
+
   /* ===== 空状态 ===== */
   #empty{text-align:center;padding:80px 20px;color:var(--muted)}
   #empty .big{font-size:54px;margin-bottom:12px}
@@ -301,6 +308,11 @@
       <div class="big">🔎</div>
       <div>没有找到匹配的产驹，换个条件试试吧。</div>
     </div>
+    <div class="pagination" id="pagination" hidden>
+      <button id="prevPage">← 上一页</button>
+      <span class="page-info" id="pageInfo"></span>
+      <button id="nextPage">下一页 →</button>
+    </div>
   </main>
 
   <section id="detail">
@@ -329,6 +341,7 @@
 <script src="updates.js"></script>
 <script>
   const data = 产驹数据;
+  const PER_PAGE = 20;
 
   // ---------- 工具 ----------
   function esc(s){
@@ -387,7 +400,7 @@
     farm:'', owner:'', trainer:'', age:'',
     winnerOnly:false,
     sortKey:null, sortDir:1,
-    view:'table'
+    view:'table', page:1
   };
 
   // ---------- 常量（筛选用的取值） ----------
@@ -573,23 +586,33 @@
 
   // ---------- 渲染 ----------
   function render(){
-    const list = sorted(filtered());
+    const full = sorted(filtered());
+    const totalPages = Math.max(1, Math.ceil(full.length / PER_PAGE));
+    if(state.page > totalPages) state.page = totalPages;
+    const start = (state.page - 1) * PER_PAGE;
+    const list = full.slice(start, start + PER_PAGE);
     const countEl = document.getElementById('count');
-    countEl.innerHTML = `筛选出 <b>${list.length}</b> / ${data.length} 匹`;
+    countEl.innerHTML = `筛选出 <b>${full.length}</b> / ${data.length} 匹 · 第 <b>${state.page}</b> / <b>${totalPages}</b> 页`;
 
     const tableWrap = document.getElementById('tableView');
     const cardView = document.getElementById('cardView');
     const empty = document.getElementById('empty');
+    const pagination = document.getElementById('pagination');
 
-    if(!list.length){
+    if(!full.length){
       document.getElementById('tbody').innerHTML = '';
       cardView.innerHTML = '';
       tableWrap.hidden = state.view !== 'table';
       cardView.hidden = state.view !== 'card';
       empty.hidden = false;
+      pagination.hidden = true;
       return;
     }
     empty.hidden = true;
+    pagination.hidden = false;
+    document.getElementById('pageInfo').textContent = `第 ${state.page} / ${totalPages} 页`;
+    document.getElementById('prevPage').disabled = state.page <= 1;
+    document.getElementById('nextPage').disabled = state.page >= totalPages;
 
     if(state.view === 'table'){
       tableWrap.hidden = false;
@@ -608,11 +631,12 @@
   let searchTimer;
   document.getElementById('search').addEventListener('input', e => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => { state.q = e.target.value; render(); }, 150);
+    searchTimer = setTimeout(() => { state.q = e.target.value; state.page = 1; render(); }, 150);
   });
 
   function chipClick(elId, key, value){
     state[key] = value;
+    state.page = 1;
     renderFilters();
     render();
   }
@@ -629,16 +653,16 @@
     chipClick('colorChips','color', b.dataset.v);
   });
 
-  document.getElementById('farmSel').addEventListener('change', e => { state.farm = e.target.value; render(); });
-  document.getElementById('ownerSel').addEventListener('change', e => { state.owner = e.target.value; render(); });
-  document.getElementById('trainerSel').addEventListener('change', e => { state.trainer = e.target.value; render(); });
-  document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; render(); });
-  document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; render(); });
+  document.getElementById('farmSel').addEventListener('change', e => { state.farm = e.target.value; state.page = 1; render(); });
+  document.getElementById('ownerSel').addEventListener('change', e => { state.owner = e.target.value; state.page = 1; render(); });
+  document.getElementById('trainerSel').addEventListener('change', e => { state.trainer = e.target.value; state.page = 1; render(); });
+  document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; state.page = 1; render(); });
+  document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
 
   document.getElementById('resetBtn').addEventListener('click', () => {
     state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
     state.farm=''; state.owner=''; state.trainer=''; state.age='';
-    state.winnerOnly=false; state.sortKey=null;
+    state.winnerOnly=false; state.sortKey=null; state.page=1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
     renderAll();
@@ -653,7 +677,7 @@
       state.sortKey = key;
       state.sortDir = (key === 'rec' || key === 'bd') ? -1 : 1;
     }
-    renderThead(); render();
+    renderThead(); state.page = 1; render();
   });
 
   document.querySelector('.view-toggle').addEventListener('click', e => {
@@ -661,6 +685,13 @@
     state.view = b.dataset.view;
     document.querySelectorAll('.view-toggle button').forEach(x => x.classList.toggle('active', x === b));
     render();
+  });
+
+  document.getElementById('prevPage').addEventListener('click', () => {
+    if(state.page > 1){ state.page--; render(); window.scrollTo(0, 0); }
+  });
+  document.getElementById('nextPage').addEventListener('click', () => {
+    state.page++; render(); window.scrollTo(0, 0);
   });
 
   renderAll();
