@@ -177,7 +177,7 @@
   .log-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 16px;border-radius:100px;font-size:13px;cursor:pointer;margin-top:16px}
   .log-btn:hover{background:rgba(255,255,255,.25)}
   .log-wrap{max-width:760px;margin:0 auto;padding:24px 20px 60px}
-  .log-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:26px}
+  .log-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:26px;overflow-x:auto}
   .log-card h2{font-size:22px;margin-bottom:4px}
   .log-card h3{font-size:15px;margin:18px 0 10px;color:var(--brand)}
   .log-list{list-style:none}
@@ -195,6 +195,7 @@
   .tw-name{color:var(--brand);font-weight:600;text-decoration:none}
   .tw-name:hover{text-decoration:underline}
   .tw-status{font-size:11px;color:var(--muted);margin-top:2px}
+  .tw-cls{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:6px;margin-top:3px;font-weight:600}
 
   /* ===== 详情页 ===== */
   #detail{display:none}
@@ -829,7 +830,7 @@
       byDate[date].forEach(r => {
         const sc = sireClass[r.sire] || '';
         html += `<tr>
-          <td>${esc(r.race||'')}${r.status ? `<div class="tw-status">${esc(r.status)}</div>` : ''}</td>
+          <td>${esc(r.race||'')}${r.status ? `<div class="tw-status">${esc(r.status)}</div>` : ''}${r.cls ? `<span class="tw-cls">${esc(r.cls)}</span>` : ''}</td>
           <td><a class="tw-name" href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name||'')}</a></td>
           <td>${esc(r.jockey||'')}</td>
           <td>${esc(r.fav||'')}</td>

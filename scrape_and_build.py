@@ -348,6 +348,29 @@ def update_changelog(count):
         f.write(js)
 
 
+def classify_race(name):
+    """根据赛事名判断赛事级别"""
+    if not name:
+        return ''
+    if re.search(r'\(G[I123]\)', name):
+        return '分级赛'
+    if 'リステッド' in name or re.search(r'\(L\)', name):
+        return '表列赛'
+    if 'オープン' in name or '(OP)' in name:
+        return '公开赛'
+    if '新馬' in name:
+        return '新马'
+    if '未勝利' in name:
+        return '未胜利'
+    if '1勝' in name:
+        return '一胜级'
+    if '2勝' in name:
+        return '二胜级'
+    if '3勝' in name:
+        return '三胜级'
+    return '三胜级'  # ステークス(S)等默认按三胜级
+
+
 def scrape_thisweek():
     """抓取本周出马（两个种马 × 中央/地方）"""
     runners = []
@@ -388,6 +411,7 @@ def scrape_thisweek():
                         num = n_el.get_text(strip=True) if n_el else ''
                         runners.append({
                             'date': day, 'race': f'{race_num} {race_name}'.strip(),
+                            'cls': classify_race(race_name),
                             'status': race_status, 'name': name, 'id': hid,
                             'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
                             'sire': sire, 'region': region,
