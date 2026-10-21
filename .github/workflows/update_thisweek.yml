@@ -23,6 +23,8 @@ jobs:
           python-version: '3.12'
       - run: pip install requests beautifulsoup4
       - run: python scrape_thisweek_only.py
+        env:
+          NETKEIBA_COOKIE: ${{ secrets.NETKEIBA_COOKIE }}
       - name: 提交
         run: |
           git config user.name "github-actions[bot]"

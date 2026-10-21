@@ -25,6 +25,8 @@ jobs:
 
       - name: 抓取并生成 data.js
         run: python scrape_and_build.py
+        env:
+          NETKEIBA_COOKIE: ${{ secrets.NETKEIBA_COOKIE }}
 
       - name: 提交更新
         run: |

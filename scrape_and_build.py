@@ -18,12 +18,29 @@ WORKERS = 3
 DELAY = 0.4
 MIN_RECORDS = 1000  # 数据量异常时拒绝覆盖，防止把网站数据清空
 PHOTO_DIR = 'photos'
+NETKEIBA_COOKIE = os.environ.get('NETKEIBA_COOKIE', '')  # 登录cookie（本周出马完整列表需要会员）
 
 
 def fetch(url):
     for _ in range(3):
         try:
             r = requests.get(url, headers=HEADERS, timeout=30)
+            r.encoding = 'euc-jp'
+            if r.status_code == 200:
+                return r
+        except Exception:
+            time.sleep(2)
+    return None
+
+
+def fetch_thisweek(url):
+    """带登录 cookie 抓取（本周出马完整列表需要会员）"""
+    headers = dict(HEADERS)
+    if NETKEIBA_COOKIE:
+        headers['Cookie'] = NETKEIBA_COOKIE
+    for _ in range(3):
+        try:
+            r = requests.get(url, headers=headers, timeout=30)
             r.encoding = 'euc-jp'
             if r.status_code == 200:
                 return r
@@ -424,7 +441,7 @@ def scrape_thisweek():
     for sire, sire_id in SIRES.items():
         for rtype, region in (('1', '中央'), ('2', '地方')):
             url = f'https://db.netkeiba.com/sire/thisweek/{sire_id}/?type={rtype}'
-            r = fetch(url)
+            r = fetch_thisweek(url)
             if not r:
                 continue
             soup = BeautifulSoup(r.text, 'html.parser')
