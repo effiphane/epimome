@@ -18,7 +18,10 @@ WORKERS = 3
 DELAY = 0.4
 MIN_RECORDS = 1000  # 数据量异常时拒绝覆盖，防止把网站数据清空
 PHOTO_DIR = 'photos'
-NETKEIBA_COOKIE = os.environ.get('NETKEIBA_COOKIE', '')  # 登录cookie（本周出马完整列表需要会员）
+NETKEIBA_COOKIE = (os.environ.get('NETKEIBA_COOKIE', '')
+                   .replace('；', ';')      # 兼容中文输入法的全角分号「；」
+                   .replace('　', ' ')      # 兼容全角空格
+                   .strip())  # 登录cookie（本周出马完整列表需要会员）
 
 
 def fetch(url):
@@ -435,6 +438,24 @@ def get_race_class(race_id):
     return cls
 
 
+def date_from_race_id(race_id):
+    """从地方赛事 race_id 提取真实日期（前 8 位 YYYYMMDD），失败返回 None。
+
+    netkeiba 的「本周出马」页面有时会把相邻几天的比赛归到同一个日期标题下，
+    导致日期错位（例如周一的比赛被标成周三）。地方赛马（nar）的 race_id 前
+    8 位通常是真实比赛日期（如 20261021 → 10月21日），用它兜底更可靠。
+    """
+    if not race_id or len(race_id) < 8:
+        return None
+    try:
+        y, mo, d = int(race_id[0:4]), int(race_id[4:6]), int(race_id[6:8])
+    except ValueError:
+        return None
+    if not (2000 <= y <= 2100 and 1 <= mo <= 12 and 1 <= d <= 31):
+        return None
+    return f'{mo}月{d}日'
+
+
 def scrape_thisweek():
     """抓取本周出马（两个种马 × 中央/地方）"""
     runners = []
@@ -479,8 +500,9 @@ def scrape_thisweek():
                         order = o_el.get_text(strip=True) if o_el else ''
                         n_el = li.find('div', class_='PcHorseNo')
                         num = n_el.get_text(strip=True) if n_el else ''
+                        date = (date_from_race_id(race_id) if region == '地方' else None) or day
                         runners.append({
-                            'date': day, 'race': f'{race_num} {race_name}'.strip(),
+                            'date': date, 'race': f'{race_num} {race_name}'.strip(),
                             'cls': cls,
                             'status': race_status, 'name': name, 'id': hid,
                             'jockey': jockey, 'fav': fav, 'order': order, 'num': num,

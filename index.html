@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>虾铺开张中 · エピファネイア産駒データベース</title>
-<!-- v2 本周出马已上线 -->
 <style>
   :root{
     --bg:#f6f5f0;
@@ -42,6 +41,12 @@
     background:radial-gradient(700px 240px at 18% 0%,rgba(184,145,47,.28),transparent 60%),
                radial-gradient(600px 220px at 82% 12%,rgba(46,134,171,.22),transparent 60%);
   }
+  .back-home{
+    position:absolute;top:18px;left:20px;z-index:3;background:transparent;
+    border:1px solid rgba(255,255,255,.35);color:#fff;padding:6px 14px;
+    border-radius:100px;font-size:13px;cursor:pointer;transition:.15s;
+  }
+  .back-home:hover{background:rgba(255,255,255,.15)}
   .tag{font-size:12px;letter-spacing:3px;opacity:.75;text-transform:uppercase}
   h1{font-size:38px;font-weight:800;letter-spacing:1px;margin-top:6px}
   .sub{opacity:.92;margin-top:8px;font-size:16px;font-weight:600}
@@ -61,11 +66,10 @@
   .stat.effo b{color:#7cc0e0}
   .search-wrap{max-width:600px;margin:24px auto 0;position:relative;z-index:1}
   .search-wrap input{
-    width:100%;padding:15px 20px 15px 48px;border:none;border-radius:100px;
+    width:100%;padding:15px 20px;border:none;border-radius:100px;
     font-size:15.5px;outline:none;color:var(--ink);background:#fff;
     box-shadow:0 10px 30px rgba(0,0,0,.25);
   }
-  .search-wrap .sicon{position:absolute;left:19px;top:50%;transform:translateY(-50%);opacity:.5;font-size:17px}
 
   /* ===== 工具栏 ===== */
   .toolbar{max-width:1180px;margin:-30px auto 0;padding:0 18px;position:relative;z-index:2}
@@ -148,12 +152,7 @@
   .card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
   .card .nm{font-size:16px;margin-top:2px}
   .card .en{color:var(--muted);font-size:12.5px;margin-top:-4px}
-  .card dl{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:12.5px;margin-top:2px}
-  .card dl div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
-  .card dl dt{color:var(--muted);white-space:nowrap}
-  .card dl dd{text-align:right;font-weight:600;overflow-wrap:anywhere}
   .card-foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
-  .card-foot .price{font-size:11.5px}
 
   /* ===== 分页 ===== */
   .pagination{display:flex;align-items:center;justify-content:center;gap:16px;margin:20px 0;flex-wrap:wrap}
@@ -164,7 +163,6 @@
 
   /* ===== 空状态 ===== */
   #empty{text-align:center;padding:80px 20px;color:var(--muted)}
-  #empty .big{font-size:54px;margin-bottom:12px}
   #empty[hidden]{display:none}
 
   footer{text-align:center;color:var(--muted);font-size:12.5px;padding:34px 20px 42px}
@@ -192,11 +190,78 @@
   .tw-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
   .tw-table th{text-align:left;background:var(--bg);padding:7px 10px;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
   .tw-table td{padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap;text-align:left;vertical-align:top}
-  .tw-day{font-size:15px;color:var(--brand);margin:16px 0 8px;font-weight:700}
   .tw-name{color:var(--brand);font-weight:600;text-decoration:none}
   .tw-name:hover{text-decoration:underline}
   .tw-status{font-size:11px;color:var(--muted);margin-top:2px}
-  .tw-cls{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:6px;margin-top:3px;font-weight:600}
+  .tw-cls{display:inline-block;background:var(--gold-soft);color:#8a6d1f;font-size:11px;padding:1px 7px;border-radius:6px;margin-top:3px;font-weight:600}
+
+  /* ===== 首页 ===== */
+  #home{display:none}
+  body.show-home #home{display:block}
+  body.show-home .hero,body.show-home .toolbar,body.show-home .controls,body.show-home main,body.show-home #detail,body.show-home #changelog,body.show-home #thisweek{display:none}
+  .home-wrap{max-width:860px;margin:0 auto;padding:48px 20px 60px}
+  .home-hero{text-align:center;margin-bottom:36px}
+  .home-kicker{font-size:12px;letter-spacing:6px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:14px}
+  .home-hero h1{
+    font-family:"Songti SC","STSong","Noto Serif SC","SimSun","PingFang SC",serif;
+    font-size:58px;font-weight:700;letter-spacing:8px;line-height:1.2;margin:0;
+    color:var(--brand2);
+  }
+  .home-hero h1 .accent{color:var(--gold)}
+  .home-rule{width:52px;height:3px;background:var(--gold);margin:20px auto 16px;border-radius:2px}
+  .home-sub{color:var(--muted);margin-top:6px;font-size:15px;letter-spacing:1px}
+  .home-sires{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px;margin:0 auto 26px}
+  .sire-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:left;box-shadow:var(--shadow)}
+  .sire-card.boss{border-color:var(--gold);background:linear-gradient(180deg,#fffdf6,#fff)}
+  .sire-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .sire-name{font-size:19px;font-weight:800}
+  .sire-en{color:var(--muted);font-size:13px}
+  .sire-tag{display:inline-block;background:var(--gold);color:#fff;font-size:11px;padding:2px 9px;border-radius:100px;font-weight:700}
+  .sire-rows{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:13px}
+  .sire-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:4px 0}
+  .sire-row span{color:var(--muted)}
+  .sire-row b{font-weight:600}
+  .sire-wins{margin-top:10px;font-size:13px;color:var(--brand);font-weight:600}
+  .sire-career{margin-top:4px;font-size:12.5px;color:var(--muted)}
+  .sire-link{display:inline-block;margin-top:12px;font-size:13px;color:var(--brand);font-weight:600;text-decoration:none}
+  .sire-link:hover{text-decoration:underline}
+  .home-search{max-width:560px;margin:0 auto 26px}
+  .home-search input{width:100%;padding:14px 18px;border:1px solid var(--line);border-radius:100px;font-size:15px;outline:none}
+  .home-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+  .nav-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 12px;text-align:center;cursor:pointer;font-size:15px;font-weight:700;transition:.15s;box-shadow:var(--shadow)}
+  .nav-card:hover{border-color:var(--brand);transform:translateY(-3px)}
+  .home-updates{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:20px}
+  .home-updates h2,.home-birthday h2{font-size:16px;margin-bottom:10px}
+  .home-updates ul{list-style:none}
+  .home-updates li{padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .home-birthday{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:24px}
+  .bd-empty{color:var(--muted);font-size:13.5px;padding:4px 0}
+  .bd-horse{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px;font-weight:600;text-decoration:none}
+  .bd-horse:hover{color:var(--brand)}
+  .bd-horse span{color:var(--muted);font-size:12.5px;font-weight:400}
+  .home-feedback{display:block;margin:0 auto;background:var(--gold);color:#fff;border:none;padding:11px 26px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer}
+  @media (max-width:640px){.home-nav{grid-template-columns:1fr}.home-sires{grid-template-columns:1fr}.home-hero h1{font-size:40px;letter-spacing:6px}}
+
+  /* ===== 本周出赛栏目 ===== */
+  .home-thisweek{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:20px}
+  .home-thisweek h2{font-size:16px;margin-bottom:10px}
+  .home-tw-list{list-style:none;max-height:280px;overflow-y:auto}
+  .home-tw-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .home-tw-item a{font-weight:700;color:var(--ink);text-decoration:none;white-space:nowrap}
+  .home-tw-item a:hover{color:var(--brand)}
+  .home-tw-item span{color:var(--muted);font-size:12.5px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ===== 弹窗 ===== */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal[hidden]{display:none}
+  .modal-box{background:#fff;border-radius:16px;padding:26px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal-box h2{font-size:20px;margin-bottom:10px}
+  .modal-box p{font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.6}
+  .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .modal-btn{display:inline-block;background:var(--brand);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
+  .modal-btn:hover{background:var(--brand2)}
+  .modal-btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .modal-btn.ghost:hover{color:var(--brand);border-color:var(--brand)}
 
   /* ===== 详情页 ===== */
   #detail{display:none}
@@ -232,10 +297,6 @@
   .ped-side details details{margin-left:18px}
   .ped-side a{color:var(--ink);text-decoration:none}
   .ped-side a:hover{color:var(--brand);text-decoration:underline}
-  .ped-tag{display:inline-block;color:#fff;font-size:11px;padding:1px 7px;border-radius:6px;margin-right:6px;vertical-align:middle}
-  .ped-tag.f{background:var(--colt)}
-  .ped-tag.m{background:var(--filly)}
-  .ped-leaf{padding:2px 0 2px 18px;font-size:13px}
   .ped-table{width:100%;border-collapse:collapse;font-size:12.5px}
   .ped-table th{padding:5px 10px;text-align:left;background:var(--bg);color:var(--muted);font-size:11.5px;font-weight:600;white-space:nowrap}
   .ped-table td{border:1px solid var(--line);padding:5px 10px;vertical-align:middle;white-space:nowrap}
@@ -259,17 +320,17 @@
   }
 </style>
 </head>
-<body>
+<body class="show-home">
 
   <header class="hero">
+    <button class="back-home" id="homeBtn">← 返回首页</button>
     <div class="tag">エピファネイア産駒データベース · Epiphaneia Progeny</div>
-    <h1>🦐 虾铺开张中</h1>
+    <h1>虾铺开张中</h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
     <div class="stats" id="stats"></div>
-    <button class="log-btn" id="twBtn">🏇 本周出马</button>
-    <button class="log-btn" id="logBtn">📋 更新日志</button>
+    <button class="log-btn" id="twBtn">本周出马</button>
+    <button class="log-btn" id="logBtn">更新日志</button>
     <div class="search-wrap">
-      <span class="sicon">🔍</span>
       <input type="search" id="search" placeholder="搜索马名 / 英文名 / 母名 / 母父 / 牧场 / 马主 / 调教师…">
     </div>
   </header>
@@ -289,7 +350,7 @@
         <select id="ageSel"></select>
         <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
         <span class="spacer"></span>
-        <button class="btn-plain" id="resetBtn">↺ 重置筛选</button>
+        <button class="btn-plain" id="resetBtn">重置筛选</button>
       </div>
     </div>
   </div>
@@ -297,8 +358,8 @@
   <div class="controls">
     <div class="count" id="count"></div>
     <div class="view-toggle">
-      <button data-view="table" class="active">☰ 表格</button>
-      <button data-view="card">▦ 卡片</button>
+      <button data-view="table" class="active">表格</button>
+      <button data-view="card">卡片</button>
     </div>
   </div>
 
@@ -311,7 +372,6 @@
     </div>
     <div class="grid" id="cardView" hidden></div>
     <div id="empty" hidden>
-      <div class="big">🔎</div>
       <div>没有找到匹配的产驹，换个条件试试吧。</div>
     </div>
     <div class="pagination" id="pagination" hidden>
@@ -332,7 +392,7 @@
     <div class="log-wrap">
       <button class="detail-back" id="logBackBtn">← 返回</button>
       <div class="log-card">
-        <h2>📋 更新日志</h2>
+        <h2>更新日志</h2>
         <div id="logBody"></div>
       </div>
     </div>
@@ -342,23 +402,73 @@
     <div class="log-wrap">
       <button class="detail-back" id="twBackBtn">← 返回</button>
       <div class="log-card">
-        <h2>🏇 本周出马</h2>
+        <h2>本周出马</h2>
         <div id="thisweekBody"></div>
       </div>
     </div>
   </section>
 
+  <section id="home">
+    <div class="home-wrap">
+      <div class="home-hero">
+        <div class="home-kicker">Epiphaneia Progeny Database</div>
+        <h1><span class="accent">虾</span>铺开张中</h1>
+        <div class="home-rule"></div>
+        <p class="home-sub">エピファネイア（Epiphaneia）产驹数据库</p>
+      </div>
+      <div class="home-sires" id="sireCards"></div>
+      <div class="home-search">
+        <input id="homeSearch" placeholder="搜索任意马名 / 英文名，回车跳转列表…">
+      </div>
+      <div class="home-nav">
+        <button class="nav-card" data-nav="list">产驹列表</button>
+        <button class="nav-card" data-nav="tw">本周出赛</button>
+        <button class="nav-card" data-nav="log">更新日志</button>
+      </div>
+      <div class="home-updates">
+        <h2>信息更新</h2>
+        <ul id="homeUpdates"></ul>
+      </div>
+      <div class="home-thisweek">
+        <h2>本周出赛</h2>
+        <div id="homeTwBody"></div>
+      </div>
+      <div class="home-birthday">
+        <h2>今日寿星</h2>
+        <div id="birthdayBody"></div>
+      </div>
+      <button class="home-feedback" id="feedbackBtn">反馈 / 报错</button>
+    </div>
+  </section>
+
   <footer>
-    虾铺开张中 · 数据来源：netkeiba.com<br>
-    更新数据：改「种马数据.xlsx」后运行 <code>py build_site.py</code> 重新生成
+    虾铺开张中 · 数据来源：netkeiba.com（每周自动更新）
   </footer>
+
+  <!-- 反馈弹窗 -->
+  <div class="modal" id="feedbackModal" hidden>
+    <div class="modal-box">
+      <h2>反馈 / 报错</h2>
+      <p>这是纯静态网站，没法直接收表单。请把要反馈的问题或报错发到 GitHub Issues，我看到后会处理。</p>
+      <div class="modal-actions">
+        <a class="modal-btn" href="https://github.com/effiphane/epimome/issues/new" target="_blank" rel="noopener">去 GitHub 提交反馈 ↗</a>
+        <button class="modal-btn ghost" id="feedbackClose">关闭</button>
+      </div>
+    </div>
+  </div>
 
 <script src="data.js"></script>
 <script src="updates.js"></script>
 <script src="thisweek.js"></script>
+<script src="corrections.js"></script>
+<script src="sire-info.js"></script>
 <script>
   const data = 产驹数据;
   const PER_PAGE = 20;
+  // 应用数据修正（corrections.js，手动修正不会自动更新覆盖）
+  if (typeof 数据修正 !== 'undefined' && 数据修正) {
+    data.forEach(h => { const fix = 数据修正[h.id]; if (fix) Object.assign(h, fix); });
+  }
 
   // ---------- 工具 ----------
   function esc(s){
@@ -379,9 +489,7 @@
     return 9999;
   }
   const sexClass = {牡:'colt', 牝:'filly', セ:'geld'};
-  const sexName = {牡:'牡', 牝:'牝', セ:'セ'};
   const sireClass = {'エピファネイア':'epi', 'エフフォーリア':'effo'};
-  const sireLabel = {'エピファネイア':'エピファネイア（父）', 'エフフォーリア':'エフフォーリア（子）'};
   const currentYear = new Date().getFullYear();
   function horseAge(h){ return (h.year != null) ? (currentYear - h.year) : null; }
   function formatPrize(p){
@@ -437,7 +545,7 @@
     const effo = data.filter(h=>h.sire==='エフフォーリア').length;
     const won = data.filter(h=>parseRec(h.rec).wins>0).length;
     document.getElementById('stats').innerHTML = `
-      <span class="stat epi">🦐 店长 エピファネイア <b>${epi}</b></span>
+      <span class="stat epi">店长 エピファネイア <b>${epi}</b></span>
       <span class="stat effo">息子 エフフォーリア <b>${effo}</b></span>
       <span class="stat">总产驹 <b>${data.length}</b> 匹</span>
       <span class="stat">已获胜 <b>${won}</b></span>`;
@@ -451,11 +559,6 @@
       const label = (labelFn && labelFn(v)) || v;
       return `<button class="chip${active?' active':''}" data-v="${esc(v)}">${esc(label)}</button>`;
     }).join('');
-  }
-  function selectHtml(values){
-    let h = `<option value="">全部</option>`;
-    values.forEach(v => h += `<option value="${esc(v)}">${esc(v)}</option>`);
-    return h;
   }
   function renderFilters(){
     document.getElementById('sexChips').innerHTML = chipsHtml(SEXES, 'sex');
@@ -642,7 +745,7 @@
     searchTimer = setTimeout(() => { state.q = e.target.value; state.page = 1; render(); }, 150);
   });
 
-  function chipClick(elId, key, value){
+  function chipClick(key, value){
     state[key] = value;
     state.page = 1;
     renderFilters();
@@ -650,11 +753,11 @@
   }
   document.getElementById('sexChips').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if(!b) return;
-    chipClick('sexChips','sex', b.dataset.v);
+    chipClick('sex', b.dataset.v);
   });
   document.getElementById('colorChips').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if(!b) return;
-    chipClick('colorChips','color', b.dataset.v);
+    chipClick('color', b.dataset.v);
   });
 
   document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; state.page = 1; render(); });
@@ -747,8 +850,8 @@
       ['母名', h.dam], ['母父', h.bms], ['生产牧场', h.farm], ['马主', h.owner],
       ['调教师', formatTrainer(h.trainer)], ['募集价格', h.raise], ['拍卖价格', h.auction]
     ].filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
-    const ped = h.ped ? `<div class="ped-box"><h3>🌳 5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
-    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>🏁 比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr${r.pos === '1' ? ' class="won-row"' : ''}><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${esc(r.pos||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const ped = h.ped ? `<div class="ped-box"><h3>5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
+    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr${r.pos === '1' ? ' class="won-row"' : ''}><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${esc(r.pos||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
     document.getElementById('detailBody').innerHTML = `
       <div class="detail-card">
         <div class="detail-head">
@@ -769,7 +872,7 @@
         ${ped}
         ${races}
       </div>`;
-    document.body.classList.remove('show-log', 'show-tw');
+    document.body.classList.remove('show-log', 'show-tw', 'show-home');
     document.body.classList.add('show-detail');
     window.scrollTo(0, 0);
   }
@@ -781,8 +884,11 @@
     if(m){ openDetail(decodeURIComponent(m[1])); } else { closeDetail(); }
   }
   document.getElementById('backBtn').addEventListener('click', () => {
-    history.replaceState(null, '', location.pathname + location.search);
-    closeDetail();
+    if(location.hash){
+      history.back(); // 回到上一级（触发 hashchange → route → closeDetail）
+    } else {
+      closeDetail();
+    }
   });
   document.getElementById('tbody').addEventListener('click', e => {
     const el = e.target.closest('[data-id]');
@@ -801,17 +907,19 @@
     const de = (typeof 数据更新 !== 'undefined') ? 数据更新 : [];
     const listHtml = arr => arr.length ? arr.map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('') : '<li>暂无记录</li>';
     document.getElementById('logBody').innerHTML = `
-      <h3>🛠 功能更新</h3><ul class="log-list">${listHtml(fe)}</ul>
-      <h3>🔄 数据更新</h3><ul class="log-list">${listHtml(de)}</ul>`;
+      <h3>功能更新</h3><ul class="log-list">${listHtml(fe)}</ul>
+      <h3>数据更新</h3><ul class="log-list">${listHtml(de)}</ul>`;
   }
   document.getElementById('logBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-detail');
+    document.body.classList.remove('show-detail', 'show-home');
     document.body.classList.add('show-log');
     renderChangelog();
     window.scrollTo(0, 0);
   });
   document.getElementById('logBackBtn').addEventListener('click', () => {
     document.body.classList.remove('show-log');
+    document.body.classList.add('show-home');
+    window.scrollTo(0, 0);
   });
 
   // ---------- 本周出马 ----------
@@ -843,14 +951,115 @@
     el.innerHTML = html;
   }
   document.getElementById('twBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-detail', 'show-log');
+    document.body.classList.remove('show-detail', 'show-log', 'show-home');
     document.body.classList.add('show-tw');
     renderThisweek();
     window.scrollTo(0, 0);
   });
   document.getElementById('twBackBtn').addEventListener('click', () => {
     document.body.classList.remove('show-tw');
+    document.body.classList.add('show-home');
+    window.scrollTo(0, 0);
   });
+
+  // ---------- 首页 ----------
+  function renderSireCards(){
+    const list = (typeof 种马信息 !== 'undefined') ? 种马信息 : [];
+    const el = document.getElementById('sireCards');
+    if(!el) return;
+    el.innerHTML = list.map(s => {
+      const boss = s.tag && s.tag.indexOf('店长') >= 0;
+      const nk = s.id ? `https://db.netkeiba.com/horse/${s.id}/` : '';
+      const rows = [['生日', s.bd], ['毛色', s.color], ['父', s.sire], ['母', s.dam], ['成绩', s.rec]]
+        .filter(([k, v]) => v)
+        .map(([k, v]) => `<div class="sire-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+      return `<div class="sire-card${boss ? ' boss' : ''}">
+        <div class="sire-head">
+          <span class="sire-name">${esc(s.name)}</span>
+          <span class="sire-en">${esc(s.en || '')}</span>
+          <span class="sire-tag">${esc(s.tag || '')}</span>
+        </div>
+        <div class="sire-rows">${rows}</div>
+        ${s.wins ? `<div class="sire-wins">主胜鞍 ${esc(s.wins)}</div>` : ''}
+        ${s.career ? `<div class="sire-career">${esc(s.career)}</div>` : ''}
+        ${nk ? `<a class="sire-link" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
+      </div>`;
+    }).join('');
+  }
+  function renderHomeUpdates(){
+    const de = (typeof 数据更新 !== 'undefined') ? 数据更新 : [];
+    const el = document.getElementById('homeUpdates');
+    if(!el) return;
+    if(!de.length){ el.innerHTML = '<li>暂无更新</li>'; return; }
+    el.innerHTML = de.slice(0, 8).map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('');
+  }
+  function renderBirthday(){
+    const now = new Date();
+    const todayKey = (now.getMonth() + 1) + '.' + now.getDate();
+    const bdHorses = data.filter(h => String(h.bd) === todayKey);
+    const el = document.getElementById('birthdayBody');
+    if(!el) return;
+    if(!bdHorses.length){
+      el.innerHTML = `<div class="bd-empty">今天（${now.getMonth()+1}月${now.getDate()}日）没有小马过生日，明天再来看看吧。</div>`;
+      return;
+    }
+    el.innerHTML = bdHorses.map(h => `<a class="bd-horse" href="#/horse/${encodeURIComponent(h.id || h.name)}">${esc(h.name)}<span>${esc(h.bd)} · ${esc(h.sire||'')}</span></a>`).join('');
+  }
+  function showHome(){
+    document.body.className = 'show-home';
+    renderSireCards();
+    renderHomeUpdates();
+    renderBirthday();
+    renderHomeTw();
+    window.scrollTo(0, 0);
+  }
+  function showList(){
+    document.body.className = '';
+    renderAll();
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('homeBtn').addEventListener('click', showHome);
+  document.querySelectorAll('.nav-card').forEach(c => c.addEventListener('click', () => {
+    const nav = c.dataset.nav;
+    if(nav === 'list') showList();
+    else if(nav === 'tw'){ document.body.className = 'show-tw'; renderThisweek(); window.scrollTo(0, 0); }
+    else if(nav === 'log'){ document.body.className = 'show-log'; renderChangelog(); window.scrollTo(0, 0); }
+  }));
+  const homeSearchEl = document.getElementById('homeSearch');
+  homeSearchEl.addEventListener('keydown', e => {
+    if(e.key !== 'Enter') return;
+    const v = homeSearchEl.value.trim();
+    showList();
+    if(v){
+      state.q = v;
+      document.getElementById('search').value = v;
+      state.page = 1;
+      render();
+    }
+  });
+
+  // ---------- 本周出赛栏目（首页固定位置） ----------
+  function renderHomeTw(){
+    const list = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const el = document.getElementById('homeTwBody');
+    if(!el) return;
+    const items = list.slice(0, 15).map(r =>
+      `<div class="home-tw-item"><a href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name)}</a><span>${esc(r.race)}</span></div>`
+    ).join('');
+    el.innerHTML = items || '<div class="home-tw-item" style="color:var(--muted)">本周暂无出赛</div>';
+  }
+
+  // ---------- 反馈窗口 ----------
+  const feedbackModal = document.getElementById('feedbackModal');
+  document.getElementById('feedbackBtn').addEventListener('click', () => { feedbackModal.hidden = false; });
+  document.getElementById('feedbackClose').addEventListener('click', () => { feedbackModal.hidden = true; });
+  feedbackModal.addEventListener('click', e => { if(e.target === feedbackModal) feedbackModal.hidden = true; });
+
+  // ---------- 初始渲染首页内容（body 默认 show-home） ----------
+  renderSireCards();
+  renderHomeUpdates();
+  renderBirthday();
+  renderHomeTw();
 </script>
 </body>
 </html>
