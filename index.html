@@ -822,26 +822,24 @@
       el.innerHTML = '<p style="color:var(--muted);padding:20px 0">本周暂无产驹出赛。</p>';
       return;
     }
-    const byDate = {};
-    list.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
-    let html = '';
-    for(const date of Object.keys(byDate)){
-      html += `<div class="tw-day">${esc(date)}</div>`;
-      html += '<table class="tw-table"><thead><tr><th>赛事</th><th>马名</th><th>骑手</th><th>人気</th><th>着順</th><th>种马</th><th>地区</th></tr></thead><tbody>';
-      byDate[date].forEach(r => {
-        const sc = sireClass[r.sire] || '';
-        html += `<tr>
-          <td>${esc(r.race||'')}${r.status ? `<div class="tw-status">${esc(r.status)}</div>` : ''}${r.cls ? `<span class="tw-cls">${esc(r.cls)}</span>` : ''}</td>
-          <td><a class="tw-name" href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name||'')}</a></td>
-          <td>${esc(r.jockey||'')}</td>
-          <td>${esc(r.fav||'')}</td>
-          <td>${esc(r.order||'')}</td>
-          <td><span class="dot ${sc}"></span>${esc(r.sire||'')}</td>
-          <td>${esc(r.region||'')}</td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-    }
+    const shownDates = new Set();
+    let html = '<table class="tw-table"><thead><tr><th>日期</th><th>赛事</th><th>马名</th><th>骑手</th><th>人気</th><th>着順</th><th>种马</th><th>地区</th></tr></thead><tbody>';
+    list.forEach(r => {
+      const sc = sireClass[r.sire] || '';
+      const dateCell = shownDates.has(r.date) ? '' : esc(r.date || '');
+      shownDates.add(r.date);
+      html += `<tr>
+        <td>${dateCell}</td>
+        <td>${esc(r.race||'')}${r.status ? `<div class="tw-status">${esc(r.status)}</div>` : ''}${r.cls ? `<span class="tw-cls">${esc(r.cls)}</span>` : ''}</td>
+        <td><a class="tw-name" href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name||'')}</a></td>
+        <td>${esc(r.jockey||'')}</td>
+        <td>${esc(r.fav||'')}</td>
+        <td>${esc(r.order||'')}</td>
+        <td><span class="dot ${sc}"></span>${esc(r.sire||'')}</td>
+        <td>${esc(r.region||'')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
     el.innerHTML = html;
   }
   document.getElementById('twBtn').addEventListener('click', () => {
