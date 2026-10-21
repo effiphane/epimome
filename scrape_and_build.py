@@ -371,6 +371,53 @@ def classify_race(name):
     return '三胜级'  # ステークス(S)等默认按三胜级
 
 
+def classify_race_from_title(title):
+    """从赛事页标题判断准确级别"""
+    if not title:
+        return ''
+    if re.search(r'\(G', title):
+        return '分级赛'
+    if 'リステッド' in title or re.search(r'\(L\)', title):
+        return '表列赛'
+    if 'オープン' in title:
+        return '公开赛'
+    if '新馬' in title:
+        return '新马'
+    if '未勝利' in title:
+        return '未胜利'
+    if re.search(r'[1１]勝', title):
+        return '一胜级'
+    if re.search(r'[2２]勝', title):
+        return '二胜级'
+    if re.search(r'[3３]勝', title):
+        return '三胜级'
+    return ''
+
+
+_race_cls_cache = {}
+
+
+def get_race_class(race_id):
+    """从赛事详情页获取准确级别（带缓存）"""
+    if not race_id:
+        return ''
+    if race_id in _race_cls_cache:
+        return _race_cls_cache[race_id]
+    cls = ''
+    try:
+        r = requests.get(f'https://race.netkeiba.com/race/result.html?race_id={race_id}',
+                         headers=HEADERS, timeout=30)
+        r.encoding = 'utf-8'
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            title = soup.title.get_text(strip=True) if soup.title else ''
+            cls = classify_race_from_title(title)
+    except Exception:
+        pass
+    _race_cls_cache[race_id] = cls
+    return cls
+
+
 def scrape_thisweek():
     """抓取本周出马（两个种马 × 中央/地方）"""
     runners = []
@@ -387,6 +434,7 @@ def scrape_thisweek():
                 for race_block in block.find_all('section', class_='EntryHorseList_RaceBlock'):
                     info = race_block.find('div', class_='EntryHorseList_RaceInfo')
                     race_num = race_name = race_status = ''
+                    race_id = ''
                     if info:
                         rn = info.find('span', class_='EntryHorseList_RaceNum')
                         race_num = rn.get_text(strip=True) if rn else ''
@@ -394,6 +442,11 @@ def scrape_thisweek():
                         race_name = rnm.get_text(strip=True) if rnm else ''
                         rs = info.find('span', class_='EntryHorseList_RaceStatus')
                         race_status = rs.get_text(strip=True) if rs else ''
+                        rlink = info.find('a', class_='EntryHorseList_RaceLink')
+                        if rlink:
+                            m = re.search(r'race_id=(\d+)', rlink.get('href', ''))
+                            race_id = m.group(1) if m else ''
+                    cls = get_race_class(race_id) if race_id else classify_race(race_name)
                     for li in race_block.find_all('li'):
                         na = li.find('a', class_='EntryHorseList_HorseName')
                         if not na:
@@ -411,7 +464,7 @@ def scrape_thisweek():
                         num = n_el.get_text(strip=True) if n_el else ''
                         runners.append({
                             'date': day, 'race': f'{race_num} {race_name}'.strip(),
-                            'cls': classify_race(race_name),
+                            'cls': cls,
                             'status': race_status, 'name': name, 'id': hid,
                             'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
                             'sire': sire, 'region': region,
