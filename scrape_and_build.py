@@ -368,7 +368,7 @@ def classify_race(name):
         return '二胜级'
     if '3勝' in name:
         return '三胜级'
-    return '三胜级'  # ステークス(S)等默认按三胜级
+    return ''  # 无法判断则留空
 
 
 def classify_race_from_title(title):
