@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/update_thisweek.yml'
       - 'scrape_thisweek_only.py'
+      - 'scrape_and_build.py'
   schedule:
     - cron: '30 22 * * *'  # 每天 UTC 22:30 = 北京 06:30
   workflow_dispatch: {}
