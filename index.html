@@ -288,8 +288,15 @@
   .home-rule{width:52px;height:1px;background:var(--gold);margin:20px auto 16px}
   .home-sub{color:var(--muted);margin-top:6px;font-size:14.5px;letter-spacing:1px}
   .home-sires{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px;margin:0 auto 28px}
-  .sire-card{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:20px;text-align:left;transition:border-color var(--ease),transform var(--ease)}
-  .sire-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .sire-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:20px;
+    text-align:left;cursor:pointer;
+    transition:border-color var(--ease),transform var(--ease),background var(--ease);
+  }
+  .sire-card:hover{border-color:var(--gold);transform:translateY(-2px);background:#fdfaf2}
+  .sire-card:active{transform:scale(.995)}
+  .sire-cta{margin-top:12px;font-size:12.5px;color:var(--muted);letter-spacing:1px;transition:color var(--ease)}
+  .sire-card:hover .sire-cta{color:var(--gold)}
   .sire-card.boss{border-left:3px solid var(--gold)}
   .sire-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
   .sire-name{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:1px}
@@ -1011,6 +1018,7 @@
   // ---------- 详情附加数据（血统/战绩）按需加载 ----------
   let currentDetailKey = null;
   const horseDetailCache = {};
+  const DETAIL_VER = '20261022';  // 详情文件版本号，避免浏览器使用旧的错误缓存
   function detailExtraHtml(h){
     const ped = h.ped ? `<div class="ped-box"><h3>5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
     const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>人气</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${rankBadge(r.pos)}</td><td>${esc(r.pop||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
@@ -1027,7 +1035,7 @@
     if(horseDetailCache[h.id]){ Object.assign(h, horseDetailCache[h.id]); renderDetailExtra(h); return; }
     if(!h.id){ renderDetailExtra(h); return; }
     const s = document.createElement('script');
-    s.src = 'detail/' + encodeURIComponent(h.id) + '.js' + (attempt ? '?r=' + attempt : '');
+    s.src = 'detail/' + encodeURIComponent(h.id) + '.js?v=' + DETAIL_VER + (attempt ? '&r=' + attempt : '');
     s.onload = () => {
       const d = (window.__DETAIL || {})[h.id] || {};
       horseDetailCache[h.id] = d;
@@ -1163,7 +1171,8 @@
       const rows = [['生日', s.bd], ['毛色', s.color], ['父', s.sire], ['母', s.dam], ['成绩', s.rec]]
         .filter(([k, v]) => v)
         .map(([k, v]) => `<div class="sire-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
-      return `<div class="sire-card${boss ? ' boss' : ''}">
+      const count = data.filter(h => h.sire === s.name).length;
+      return `<div class="sire-card${boss ? ' boss' : ''}" data-sire="${esc(s.name)}" tabindex="0" role="button" aria-label="查看 ${esc(s.name)} 的产驹">
         <div class="sire-head">
           <span class="sire-name">${esc(s.name)}</span>
           <span class="sire-en">${esc(s.en || '')}</span>
@@ -1172,6 +1181,7 @@
         <div class="sire-rows">${rows}</div>
         ${s.wins ? `<div class="sire-wins">主胜鞍 ${esc(s.wins)}</div>` : ''}
         ${s.career ? `<div class="sire-career">${esc(s.career)}</div>` : ''}
+        ${count ? `<div class="sire-cta">查看 ${count} 匹产驹 →</div>` : ''}
         ${nk ? `<a class="sire-link" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
       </div>`;
     }).join('');
@@ -1208,6 +1218,24 @@
     renderAll();
     window.scrollTo(0, 0);
   }
+  function openSireList(sire){
+    state.sire = sire; state.sex = '全部'; state.color = '全部'; state.q = '';
+    state.age = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
+    document.getElementById('search').value = '';
+    document.getElementById('winnerChk').checked = false;
+    showList();
+  }
+  const sireCardsEl = document.getElementById('sireCards');
+  sireCardsEl.addEventListener('click', e => {
+    if(e.target.closest('.sire-link')) return;
+    const card = e.target.closest('[data-sire]');
+    if(card) openSireList(card.dataset.sire);
+  });
+  sireCardsEl.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('[data-sire]');
+    if(card){ e.preventDefault(); openSireList(card.dataset.sire); }
+  });
   document.getElementById('homeBtn').addEventListener('click', showHome);
   document.querySelectorAll('.nav-card').forEach(c => c.addEventListener('click', () => {
     const nav = c.dataset.nav;
