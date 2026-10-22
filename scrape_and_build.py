@@ -530,6 +530,45 @@ def date_from_race_id(race_id):
     return f'{mo}月{d}日'
 
 
+def _month_day(s):
+    """把 '10月18日' 或 '2026/10/18' 转成 '1018'，用于比较日期"""
+    s = s or ''
+    m = re.search(r'(\d{1,2})月(\d{1,2})日', s)
+    if m:
+        return f'{int(m.group(1)):02d}{int(m.group(2)):02d}'
+    m = re.search(r'/(\d{1,2})/(\d{1,2})', s)
+    if m:
+        return f'{int(m.group(1)):02d}{int(m.group(2)):02d}'
+    return None
+
+
+def filter_false_runners(runners):
+    """过滤掉 netkeiba 页面误标的「报了名但没出赛」的记录。
+
+    对每条中央・結果確定的记录，查该马真实战绩，若战绩里没有同月同日的比赛，
+    说明这匹马当天其实没出赛（页面残留的出马表），丢弃该记录。
+    """
+    cache = {}
+    out = []
+    for r in runners:
+        keep = True
+        if r.get('region') == '中央' and r.get('status') == '結果確定' and r.get('id'):
+            hid = r['id']
+            if hid not in cache:
+                try:
+                    cache[hid] = [race.get('date') or '' for race in scrape_results(hid)]
+                except Exception:
+                    cache[hid] = None
+            dates = cache[hid]
+            if dates is not None:
+                target = _month_day(r.get('date'))
+                if target and not any(_month_day(d) == target for d in dates):
+                    keep = False
+        if keep:
+            out.append(r)
+    return out
+
+
 def scrape_thisweek():
     """抓取本周出马（两个种马 × 中央/地方）"""
     runners = []
@@ -582,7 +621,7 @@ def scrape_thisweek():
                             'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
                             'sire': sire, 'region': region,
                         })
-    return runners
+    return filter_false_runners(runners)
 
 
 def write_thisweek(runners):
