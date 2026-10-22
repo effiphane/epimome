@@ -369,20 +369,40 @@ def scrape_ped(hid):
     return parse_pedigree(tables[0])
 
 
+DETAIL_DIR = 'detail'
+
+
+def write_detail_files(records):
+    """把血统/战绩拆成每匹马一个小文件 detail/{id}.js，详情页按需加载"""
+    os.makedirs(DETAIL_DIR, exist_ok=True)
+    for h in records:
+        hid = h.get('id')
+        if not hid:
+            continue
+        payload = {'ped': h.get('ped'), 'races': h.get('races') or []}
+        with open(os.path.join(DETAIL_DIR, f'{hid}.js'), 'w', encoding='utf-8') as f:
+            f.write('window.__DETAIL = window.__DETAIL || {};\n')
+            f.write('window.__DETAIL[' + json.dumps(hid) + '] = ' +
+                    json.dumps(payload, ensure_ascii=False) + ';\n')
+
+
 def load_old_ped():
-    """从旧 data.js 读取血统映射（血统不变，可复用省请求）"""
+    """从 detail/{id}.js 读取已抓的血统（血统不变，可复用省请求）"""
     ped_map = {}
     try:
-        if not os.path.exists('data.js'):
-            return ped_map
-        with open('data.js', encoding='utf-8') as f:
-            content = f.read()
-        m = re.search(r'=\s*(\[.*\])\s*;', content, re.S)
-        if m:
-            old = json.loads(m.group(1))
-            for h in old:
-                if h.get('id') and h.get('ped'):
-                    ped_map[str(h['id'])] = h['ped']
+        for path in glob.glob(os.path.join(DETAIL_DIR, '*.js')):
+            with open(path, encoding='utf-8') as f:
+                content = f.read()
+            m = re.search(r'window\.__DETAIL\[[^\]]*\]\s*=\s*(\{.*\})\s*;', content, re.S)
+            if not m:
+                continue
+            try:
+                payload = json.loads(m.group(1))
+            except Exception:
+                continue
+            hid = os.path.splitext(os.path.basename(path))[0]
+            if payload.get('ped'):
+                ped_map[hid] = payload['ped']
     except Exception:
         pass
     return ped_map
@@ -490,25 +510,49 @@ def classify_race_from_title(title):
 _race_cls_cache = {}
 
 
-def get_race_class(race_id):
-    """从赛事详情页获取准确级别（带缓存）"""
+def _race_host(race_id):
+    """赛事 ID 第 5-6 位是赛场代码：JRA 01-10，地方 30 以上"""
+    return 'nar.netkeiba.com' if race_id[4:6] >= '30' else 'race.netkeiba.com'
+
+
+def get_race_info(race_id):
+    """从赛事页获取准确级别 + 开赛时间（北京时间，带缓存）
+
+    返回 {'cls': '分级赛', 'time': '15:40'}，取不到的字段为空字符串。
+    日本时间与北京时间差 1 小时，这里直接换算成北京时间。
+    """
     if not race_id:
-        return ''
+        return {'cls': '', 'time': ''}
     if race_id in _race_cls_cache:
         return _race_cls_cache[race_id]
-    cls = ''
-    try:
-        r = requests.get(f'https://race.netkeiba.com/race/result.html?race_id={race_id}',
-                         headers=HEADERS, timeout=30)
-        r.encoding = 'utf-8'
-        if r.status_code == 200:
+    info = {'cls': '', 'time': ''}
+    for kind in ('shutuba', 'result'):
+        try:
+            r = requests.get(f'https://{_race_host(race_id)}/race/{kind}.html?race_id={race_id}',
+                             headers=HEADERS, timeout=30)
+            r.encoding = 'utf-8'
+            if r.status_code != 200:
+                continue
             soup = BeautifulSoup(r.text, 'html.parser')
-            title = soup.title.get_text(strip=True) if soup.title else ''
-            cls = classify_race_from_title(title)
-    except Exception:
-        pass
-    _race_cls_cache[race_id] = cls
-    return cls
+            if not info['cls']:
+                title = soup.title.get_text(strip=True) if soup.title else ''
+                info['cls'] = classify_race_from_title(title)
+            if not info['time']:
+                m = re.search(r'(\d{1,2}):(\d{2})\s*発走', soup.get_text())
+                if m:
+                    h, mi = int(m.group(1)), int(m.group(2))
+                    info['time'] = f'{(h - 1) % 24:02d}:{mi:02d}'  # JST → 北京时间
+            if info['cls'] and info['time']:
+                break
+        except Exception:
+            pass
+    _race_cls_cache[race_id] = info
+    return info
+
+
+def get_race_class(race_id):
+    """兼容旧调用：只取赛事级别"""
+    return get_race_info(race_id)['cls']
 
 
 def date_from_race_id(race_id):
@@ -597,7 +641,9 @@ def scrape_thisweek():
                         if rlink:
                             m = re.search(r'race_id=(\d+)', rlink.get('href', ''))
                             race_id = m.group(1) if m else ''
-                    cls = get_race_class(race_id) if race_id else classify_race(race_name)
+                    info = get_race_info(race_id) if race_id else {'cls': '', 'time': ''}
+                    cls = info['cls'] or classify_race(race_name)
+                    start_time = info['time']
                     for li in race_block.find_all('li'):
                         na = li.find('a', class_='EntryHorseList_HorseName')
                         if not na:
@@ -615,12 +661,19 @@ def scrape_thisweek():
                         num = n_el.get_text(strip=True) if n_el else ''
                         date = (date_from_race_id(race_id) if region == '地方' else None) or day
                         runners.append({
-                            'date': date, 'race': f'{race_num} {race_name}'.strip(),
+                            'date': date, 'time': start_time,
+                            'race': f'{race_num} {race_name}'.strip(),
                             'cls': cls,
                             'status': race_status, 'name': name, 'id': hid,
                             'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
                             'sire': sire, 'region': region,
                         })
+    # 按日期 + 开赛时间排序（无时间的排在当天最后）
+    def _date_key(r):
+        m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date', ''))
+        return (int(m.group(1)), int(m.group(2))) if m else (99, 99)
+
+    runners.sort(key=lambda r: (_date_key(r), r.get('time') or '99:99'))
     return filter_false_runners(runners)
 
 
@@ -689,11 +742,16 @@ def main():
     if len(all_records) < MIN_RECORDS:
         sys.exit(f'数据量异常({len(all_records)} < {MIN_RECORDS})，放弃更新 data.js')
 
+    # 血统/战绩拆成每匹马一个小文件（详情页按需加载，首屏 data.js 从 7MB 降到约 1MB）
+    write_detail_files(all_records)
+    print(f'已写入 {DETAIL_DIR}/（{len(all_records)} 个文件）', flush=True)
+
+    slim = [{k: v for k, v in h.items() if k not in ('ped', 'races')} for h in all_records]
     js = '// 本文件由 scrape_and_build.py 自动生成\nconst 产驹数据 = ' + \
-        json.dumps(all_records, ensure_ascii=False) + ';\n'
+        json.dumps(slim, ensure_ascii=False) + ';\n'
     with open('data.js', 'w', encoding='utf-8') as f:
         f.write(js)
-    print('已写入 data.js', flush=True)
+    print(f'已写入 data.js（{os.path.getsize("data.js")/1024/1024:.2f} MB）', flush=True)
     update_changelog(len(all_records))
     write_thisweek(scrape_thisweek())
 
