@@ -337,13 +337,13 @@ def scrape_horse(hid, ped_map):
     return detail
 
 
-def update_changelog(count):
-    """更新 updates.js 的"数据更新"列表"""
+def add_update_entry(text):
+    """往 updates.js 的「数据更新」列表加一条记录（同一天可多条，同类不重复）"""
     import datetime
     today = datetime.date.today().isoformat()
-    entry = {'date': today, 'text': f'更新产驹数据（{count}匹）'}
+    entry = {'date': today, 'text': text}
     func = []
-    data = [entry]
+    data = []
     if os.path.exists('updates.js'):
         with open('updates.js', encoding='utf-8') as f:
             content = f.read()
@@ -357,15 +357,20 @@ def update_changelog(count):
         if m2:
             try:
                 data = json.loads(m2.group(1))
-                if not data or data[0].get('date') != today:
-                    data = [entry] + data
             except Exception:
-                data = [entry]
+                data = []
+    if not any(x.get('date') == today and x.get('text') == text for x in data):
+        data = [entry] + data
     js = '// 数据更新由脚本自动维护；功能更新请手动编辑\n'
     js += 'const 功能更新 = ' + json.dumps(func, ensure_ascii=False) + ';\n'
     js += 'const 数据更新 = ' + json.dumps(data, ensure_ascii=False) + ';\n'
     with open('updates.js', 'w', encoding='utf-8') as f:
         f.write(js)
+
+
+def update_changelog(count):
+    """更新产驹数据时记录一条（兼容旧调用）"""
+    add_update_entry(f'更新产驹数据（{count}匹）')
 
 
 def classify_race(name):
