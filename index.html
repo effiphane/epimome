@@ -1056,7 +1056,10 @@
   }
   function route(){
     const m = location.hash.match(/^#\/horse\/(.+)$/);
-    if(m){ openDetail(decodeURIComponent(m[1])); } else { closeDetail(); }
+    if(m){ openDetail(decodeURIComponent(m[1])); return; }
+    const sm = location.hash.match(/^#\/sire\/(.+)$/);
+    if(sm){ openSireDetail(decodeURIComponent(sm[1])); return; }
+    closeDetail();
   }
   document.getElementById('backBtn').addEventListener('click', () => {
     if(location.hash){
@@ -1181,7 +1184,7 @@
         <div class="sire-rows">${rows}</div>
         ${s.wins ? `<div class="sire-wins">主胜鞍 ${esc(s.wins)}</div>` : ''}
         ${s.career ? `<div class="sire-career">${esc(s.career)}</div>` : ''}
-        ${count ? `<div class="sire-cta">查看 ${count} 匹产驹 →</div>` : ''}
+        ${count ? `<div class="sire-cta">查看详情 · ${count} 位店员 →</div>` : ''}
         ${nk ? `<a class="sire-link" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
       </div>`;
     }).join('');
@@ -1223,18 +1226,73 @@
     state.age = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
+    history.replaceState(null, '', location.pathname + location.search);
     showList();
   }
+  function openSireDetail(name){
+    const list = (typeof 种马信息 !== 'undefined') ? 种马信息 : [];
+    const s = list.find(x => x.name === name);
+    if(!s) return;
+    currentDetailKey = null;
+    const kids = data.filter(h => h.sire === s.name)
+      .sort((a, b) => parseRec(b.rec).wins - parseRec(a.rec).wins ||
+                      String(a.name).localeCompare(String(b.name), 'ja'));
+    const shown = kids.slice(0, 60);
+    const nk = s.id ? `https://db.netkeiba.com/horse/${s.id}/` : '';
+    const info = [
+      ['生日', s.bd], ['性别', s.sex], ['毛色', s.color], ['生产牧场', s.farm],
+      ['父', s.sire], ['母', s.dam], ['通算成绩', s.rec]
+    ].filter(([k, v]) => v)
+     .map(([k, v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+    const rows = shown.map(h => `<tr>
+        <td><a class="tw-name" href="#/horse/${encodeURIComponent(h.id || h.name)}">${esc(h.name)}</a></td>
+        <td><span class="sex ${sexClass[h.sex] || 'geld'}">${esc(h.sex || '')}</span></td>
+        <td>${colorBadge(h.color)}</td>
+        <td>${esc(h.bd || '')}</td>
+        <td>${horseAge(h) != null ? horseAge(h) + '岁' : '—'}</td>
+        <td>${esc(h.rec || '—')}</td>
+        <td>${statusBadge(horseStatus(h))}</td>
+      </tr>`).join('');
+    document.getElementById('detailBody').innerHTML = `
+      <div class="detail-card">
+        <div class="detail-main">
+          <h2>${esc(s.name)}${s.en ? `<span class="en">${esc(s.en)}</span>` : ''}</h2>
+          <div class="detail-badges">
+            ${s.tag ? `<span class="sire-tag">${esc(s.tag)}</span>` : ''}
+          </div>
+          <div class="detail-info">${info}</div>
+          ${s.wins ? `<div class="detail-rec">主胜鞍 ${esc(s.wins)}</div>` : ''}
+          ${s.career ? `<p class="sire-career" style="margin-top:8px">${esc(s.career)}</p>` : ''}
+          ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
+        </div>
+        <div class="wins-box">
+          <h3>店员（产驹）${kids.length} 匹${kids.length > shown.length ? ` · 先显示前 ${shown.length} 匹` : ''}</h3>
+          <table class="wins-table">
+            <thead><tr><th>马名</th><th>性别</th><th>毛色</th><th>生日</th><th>年龄</th><th>成绩</th><th>状态</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="7">暂无产驹</td></tr>'}</tbody>
+          </table>
+          ${kids.length > shown.length ? `<button class="detail-back" id="sireAllBtn" style="margin-top:14px">在产驹列表中查看全部 ${kids.length} 匹 →</button>` : ''}
+        </div>
+      </div>`;
+    document.body.classList.remove('show-log', 'show-tw', 'show-home');
+    document.body.classList.add('show-detail');
+    window.scrollTo(0, 0);
+    const allBtn = document.getElementById('sireAllBtn');
+    if(allBtn) allBtn.addEventListener('click', () => openSireList(s.name));
+  }
   const sireCardsEl = document.getElementById('sireCards');
+  function gotoCard(el){
+    if(!el) return;
+    location.hash = '#/sire/' + encodeURIComponent(el.dataset.sire);
+  }
   sireCardsEl.addEventListener('click', e => {
     if(e.target.closest('.sire-link')) return;
-    const card = e.target.closest('[data-sire]');
-    if(card) openSireList(card.dataset.sire);
+    gotoCard(e.target.closest('[data-sire]'));
   });
   sireCardsEl.addEventListener('keydown', e => {
     if(e.key !== 'Enter' && e.key !== ' ') return;
     const card = e.target.closest('[data-sire]');
-    if(card){ e.preventDefault(); openSireList(card.dataset.sire); }
+    if(card){ e.preventDefault(); gotoCard(card); }
   });
   document.getElementById('homeBtn').addEventListener('click', showHome);
   document.querySelectorAll('.nav-card').forEach(c => c.addEventListener('click', () => {
