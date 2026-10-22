@@ -170,7 +170,7 @@ def parse_prize(v):
 
 
 def scrape_results(hid):
-    """战绩页：抓取全部比赛履历"""
+    """战绩页：抓取全部比赛履历（含人气，按表头定位列，避免索引错位）"""
     r = fetch(f'https://db.netkeiba.com/horse/result/{hid}/')
     if not r:
         return []
@@ -178,14 +178,38 @@ def scrape_results(hid):
     table = soup.find('table', class_='db_h_race_results')
     if not table:
         return []
+    headers = []
+    thead = table.find('thead') or table.find('tr')
+    if thead:
+        headers = [th.get_text(strip=True) for th in thead.find_all(['th', 'td'])]
+
+    def col(*names):
+        for i, h in enumerate(headers):
+            if any(n in h for n in names):
+                return i
+        return None
+
+    i_date = col('日付')
+    i_venue = col('開催')
+    i_race = col('レース名')
+    i_pos = col('着順')
+    i_jockey = col('騎手')
+    i_dist = col('距離')
+    i_pop = col('人気')
+
     races = []
     for tr in table.find_all('tr')[1:]:
         cells = [c.get_text(strip=True) for c in tr.find_all('td')]
-        if len(cells) < 15:
+        if not cells:
             continue
+
+        def get(i):
+            return cells[i] if i is not None and i < len(cells) else ''
+
         races.append({
-            'date': cells[0], 'venue': cells[1], 'race': cells[4],
-            'pos': cells[11], 'jockey': cells[12], 'dist': cells[14],
+            'date': get(i_date), 'venue': get(i_venue), 'race': get(i_race),
+            'pos': get(i_pos), 'jockey': get(i_jockey), 'dist': get(i_dist),
+            'pop': get(i_pop),
         })
     return races
 
@@ -223,6 +247,45 @@ def detect_status(soup):
             return '退役・繁殖'
     if '抹消' in txt or '引退' in txt:
         return '退役'
+    return None
+
+
+def check_jbis_breeding(name, sex):
+    """查 JBIS 确认马匹是否已入繁殖（種牡馬/繁殖牝馬），是返回 '退役・繁殖'，否则 None。
+
+    netkeiba 对「退役但产驹还没出生」的繁殖马会误标为退役（页面没有種牡馬/繁殖牝馬标签），
+    用 JBIS 交叉核对纠正。失败（超时/403/解析异常/找不到）一律返回 None，不影响原状态。
+    """
+    if sex not in ('牡', '牝'):
+        return None
+    try:
+        # 1) 用马名搜索 JBIS，取第一个结果（同名马按年份区分的情况很少，先取第一个）
+        r = requests.get('https://www.jbis.or.jp/horse/result/',
+                         params={'keyword': name}, headers=HEADERS, timeout=15)
+        if r.status_code != 200:
+            return None
+        r.encoding = 'utf-8'
+        soup = BeautifulSoup(r.text, 'html.parser')
+        jbis_id = None
+        for a in soup.find_all('a', href=True):
+            m = re.search(r'/horse/(\d+)/', a['href'])
+            if m:
+                jbis_id = m.group(1)
+                break
+        if not jbis_id:
+            return None
+        # 2) 访问详情页，判断繁殖标识
+        r2 = requests.get(f'https://www.jbis.or.jp/horse/{jbis_id}/', headers=HEADERS, timeout=15)
+        if r2.status_code != 200:
+            return None
+        r2.encoding = 'utf-8'
+        txt = r2.text
+        if sex == '牝' and ('繁殖牝馬情報' in txt or '繁殖牝馬' in txt):
+            return '退役・繁殖'
+        if sex == '牡' and ('種牡馬情報' in txt or '種牡馬' in txt):
+            return '退役・繁殖'
+    except Exception:
+        pass
     return None
 
 
@@ -325,8 +388,8 @@ def load_old_ped():
     return ped_map
 
 
-def scrape_horse(hid, ped_map):
-    """一匹马：详情 + 照片下载 + 血统（可复用）+ 战绩"""
+def scrape_horse(hid, ped_map, name=None, sex=None):
+    """一匹马：详情 + 照片下载 + 血统（可复用）+ 战绩 + 繁殖状态 JBIS 核对"""
     session = requests.Session()
     session.headers.update(HEADERS)
     detail = scrape_detail(session, hid)
@@ -334,6 +397,11 @@ def scrape_horse(hid, ped_map):
     detail['photo'] = download_photo(session, hid, url) if url else None
     detail['ped'] = ped_map.get(str(hid)) or scrape_ped(hid)
     detail['races'] = scrape_results(hid)
+    # 退役马交叉核对 JBIS，纠正「退役但实际已入繁殖」的误标
+    if detail.get('status') == '退役' and name and sex in ('牡', '牝'):
+        breed = check_jbis_breeding(name, sex)
+        if breed:
+            detail['status'] = breed
     return detail
 
 
@@ -539,7 +607,7 @@ def main():
         detail_map = {}
         done = 0
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            futs = {ex.submit(scrape_horse, h['horse_id'], ped_map): name for name, h in items}
+            futs = {ex.submit(scrape_horse, h['horse_id'], ped_map, name, h['sex']): name for name, h in items}
             for fut in as_completed(futs):
                 name = futs[fut]
                 try:

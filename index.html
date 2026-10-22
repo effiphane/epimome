@@ -851,7 +851,7 @@
       ['调教师', formatTrainer(h.trainer)], ['募集价格', h.raise], ['拍卖价格', h.auction]
     ].filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
     const ped = h.ped ? `<div class="ped-box"><h3>5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
-    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr${r.pos === '1' ? ' class="won-row"' : ''}><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${esc(r.pos||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>人气</th><th>骑手</th><th>距离</th></tr></thead><tbody>${h.races.map(r => `<tr${r.pos === '1' ? ' class="won-row"' : ''}><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${esc(r.pos||'')}</td><td>${esc(r.pop||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
     document.getElementById('detailBody').innerHTML = `
       <div class="detail-card">
         <div class="detail-head">
