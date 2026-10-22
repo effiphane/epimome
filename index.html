@@ -271,6 +271,7 @@
     transition:background-size .2s ease;
   }
   .tw-name:hover{background-size:100% 1px}
+  .tw-range{font-size:12.5px;color:var(--muted);margin:-2px 0 12px;letter-spacing:1px}
   .tw-status{font-size:11px;color:var(--muted);margin-top:2px}
   .tw-cls{display:inline-block;background:var(--gold-soft);color:#7d6428;font-size:11px;padding:0 6px;border-radius:2px;margin-top:3px;font-weight:600}
 
@@ -537,6 +538,7 @@
       <button class="detail-back back-btn" id="twBackBtn">← 返回</button>
       <div class="log-card">
         <h2>本周出马</h2>
+        <div class="tw-range" id="twRange"></div>
         <div id="thisweekBody"></div>
       </div>
     </div>
@@ -1125,6 +1127,24 @@
       return String(a.time || '99:99').localeCompare(String(b.time || '99:99'));
     });
   }
+  // 只保留本周（周一 ~ 周日）的出赛
+  function weekRange(){
+    const now = new Date();
+    const day = (now.getDay() + 6) % 7; // 周一 = 0
+    const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+    const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+    return [mon, sun];
+  }
+  function inThisWeek(dateStr){
+    const m = String(dateStr || '').match(/(\d{1,2})月(\d{1,2})日/);
+    if(!m) return true;
+    const [mon, sun] = weekRange();
+    for(const y of [mon.getFullYear(), sun.getFullYear()]){
+      const d = new Date(y, (+m[1]) - 1, +m[2]);
+      if(d >= mon && d <= sun) return true;
+    }
+    return false;
+  }
   function rankCls(o){
     const s = String(o == null ? '' : o).trim();
     if(/^[123]$/.test(s)) return 'rank-' + s;
@@ -1136,7 +1156,14 @@
     return `<span class="rank-badge ${rankCls(s) || 'rank-other'}">${esc(s)}</span>`;
   }
   function renderThisweek(){
-    const list = sortByDate((typeof 本周出马 !== 'undefined') ? 本周出马 : []);
+    const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
+    const rangeEl = document.getElementById('twRange');
+    if(rangeEl){
+      const [mon, sun] = weekRange();
+      const fmt = d => `${d.getMonth() + 1}月${d.getDate()}日`;
+      rangeEl.textContent = `${fmt(mon)} – ${fmt(sun)}`;
+    }
     const el = document.getElementById('thisweekBody');
     if(!list.length){
       el.innerHTML = '<p style="color:var(--muted);padding:20px 0">本周暂无产驹出赛。</p>';
@@ -1324,7 +1351,8 @@
 
   // ---------- 本周出赛栏目（首页固定位置） ----------
   function renderHomeTw(){
-    const list = sortByDate((typeof 本周出马 !== 'undefined') ? 本周出马 : []);
+    const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
     const el = document.getElementById('homeTwBody');
     if(!el) return;
     const items = list.slice(0, 15).map(r =>
