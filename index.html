@@ -924,8 +924,16 @@
   });
 
   // ---------- 本周出马 ----------
+  function dateKey(s){
+    const m = String(s || '').match(/(\d{1,2})月(\d{1,2})日/);
+    return m ? (+m[1]) * 100 + (+m[2]) : 9999;
+  }
+  function sortByDate(list){
+    // 按日期升序（sort 稳定，同一天内保持原顺序）
+    return list.slice().sort((a, b) => dateKey(a.date) - dateKey(b.date));
+  }
   function renderThisweek(){
-    const list = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const list = sortByDate((typeof 本周出马 !== 'undefined') ? 本周出马 : []);
     const el = document.getElementById('thisweekBody');
     if(!list.length){
       el.innerHTML = '<p style="color:var(--muted);padding:20px 0">本周暂无产驹出赛。</p>';
@@ -1041,7 +1049,7 @@
 
   // ---------- 本周出赛栏目（首页固定位置） ----------
   function renderHomeTw(){
-    const list = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
+    const list = sortByDate((typeof 本周出马 !== 'undefined') ? 本周出马 : []);
     const el = document.getElementById('homeTwBody');
     if(!el) return;
     const items = list.slice(0, 15).map(r =>
