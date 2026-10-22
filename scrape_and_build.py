@@ -444,19 +444,20 @@ def get_race_class(race_id):
 
 
 def date_from_race_id(race_id):
-    """从地方赛事 race_id 提取真实日期（前 8 位 YYYYMMDD），失败返回 None。
+    """从地方赛事(nar)race_id 提取真实日期，失败返回 None。
 
-    netkeiba 的「本周出马」页面有时会把相邻几天的比赛归到同一个日期标题下，
-    导致日期错位（例如周一的比赛被标成周三）。地方赛马（nar）的 race_id 前
-    8 位通常是真实比赛日期（如 20261021 → 10月21日），用它兜底更可靠。
+    nar 的 race_id 是 12 位：YYYY(4) + 赛场代码(2) + 月(2) + 日(2) + 场次(2)
+    例如 202635102011 → 2026 35(盛冈) 10月 20日 11R → 10月20日。
+    netkeiba 的「本周出马」页面有时会把相邻几天的比赛归到同一个日期标题下
+    导致错位，用 race_id 里的月日兜底更可靠。
     """
-    if not race_id or len(race_id) < 8:
+    if not race_id or len(race_id) < 10:
         return None
     try:
-        y, mo, d = int(race_id[0:4]), int(race_id[4:6]), int(race_id[6:8])
+        mo, d = int(race_id[6:8]), int(race_id[8:10])
     except ValueError:
         return None
-    if not (2000 <= y <= 2100 and 1 <= mo <= 12 and 1 <= d <= 31):
+    if not (1 <= mo <= 12 and 1 <= d <= 31):
         return None
     return f'{mo}月{d}日'
 
