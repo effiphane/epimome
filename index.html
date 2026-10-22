@@ -42,11 +42,12 @@
                radial-gradient(600px 220px at 82% 12%,rgba(46,134,171,.22),transparent 60%);
   }
   .back-home{
-    position:absolute;top:18px;left:20px;z-index:3;background:transparent;
-    border:1px solid rgba(255,255,255,.35);color:#fff;padding:6px 14px;
-    border-radius:100px;font-size:13px;cursor:pointer;transition:.15s;
+    position:absolute;top:18px;left:20px;z-index:3;background:var(--brand);
+    border:1px solid rgba(255,255,255,.15);color:#fff;padding:9px 18px;font-weight:600;
+    border-radius:10px;font-size:14px;cursor:pointer;transition:.15s;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);
   }
-  .back-home:hover{background:rgba(255,255,255,.15)}
+  .back-home:hover{background:var(--brand2)}
   .tag{font-size:12px;letter-spacing:3px;opacity:.75;text-transform:uppercase}
   h1{font-size:38px;font-weight:800;letter-spacing:1px;margin-top:6px}
   .sub{opacity:.92;margin-top:8px;font-size:16px;font-weight:600}
@@ -323,7 +324,7 @@
 <body class="show-home">
 
   <header class="hero">
-    <button class="back-home" id="homeBtn">← 返回首页</button>
+    <button class="back-home" id="homeBtn">← 返回</button>
     <div class="tag">エピファネイア産駒データベース · Epiphaneia Progeny</div>
     <h1>虾铺开张中</h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
