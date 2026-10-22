@@ -17,6 +17,7 @@ SIRES_EN = {'エピファネイア': 'Epiphaneia', 'エフフォーリア': 'Eff
 WORKERS = 3
 DELAY = 0.4
 MIN_RECORDS = 1000  # 数据量异常时拒绝覆盖，防止把网站数据清空
+MIN_THISWEEK = 3    # 本周出赛少于这个数就认为抓取失败，保留旧数据
 PHOTO_DIR = 'photos'
 NETKEIBA_COOKIE = (os.environ.get('NETKEIBA_COOKIE', '')
                    .replace('；', ';')      # 兼容中文输入法的全角分号「；」
@@ -546,6 +547,7 @@ def get_race_info(race_id):
                 break
         except Exception:
             pass
+        time.sleep(0.3)  # 放慢请求，避免被 netkeiba 限流
     _race_cls_cache[race_id] = info
     return info
 
@@ -603,6 +605,7 @@ def filter_false_runners(runners):
                     cache[hid] = [race.get('date') or '' for race in scrape_results(hid)]
                 except Exception:
                     cache[hid] = None
+                time.sleep(0.25)  # 放慢请求，避免被限流
             dates = cache[hid]
             if dates is not None:
                 target = _month_day(r.get('date'))
@@ -753,7 +756,11 @@ def main():
         f.write(js)
     print(f'已写入 data.js（{os.path.getsize("data.js")/1024/1024:.2f} MB）', flush=True)
     update_changelog(len(all_records))
-    write_thisweek(scrape_thisweek())
+    tw = scrape_thisweek()
+    if len(tw) >= MIN_THISWEEK:
+        write_thisweek(tw)
+    else:
+        print(f'本周出赛抓取异常（{len(tw)} 条），保留旧数据', flush=True)
 
 
 if __name__ == '__main__':

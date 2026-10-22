@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-"""只抓取本周出马数据（含赛事级别），供每日定时任务用"""
+"""只抓取本周出马数据（含赛事级别/开赛时间），供每日定时任务用"""
+import sys
 import scrape_and_build as sb
 
 runners = sb.scrape_thisweek()
+if len(runners) < sb.MIN_THISWEEK:
+    sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')
 sb.write_thisweek(runners)
 sb.add_update_entry(f'更新本周出赛（{len(runners)}匹）')
