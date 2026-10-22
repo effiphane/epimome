@@ -7,7 +7,12 @@ on:
       - 'scrape_thisweek_only.py'
       - 'scrape_and_build.py'
   schedule:
-    - cron: '30 22 * * *'  # 每天 UTC 22:30 = 北京 06:30
+    # 中央比赛日（周六、周日）北京时间 8:00-18:00 每小时 = UTC 0:00-10:00
+    - cron: '0 0-10 * * 0,6'
+    # 周三、周四 北京时间 16:00 = UTC 08:00（出马表公布）
+    - cron: '0 8 * * 3,4'
+    # 其他日子（周一、周二、周五）每天一次 北京时间 06:30 = UTC 22:30（前一天）
+    - cron: '30 22 * * 1,2,5'
   workflow_dispatch: {}
 
 permissions:
