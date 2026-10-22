@@ -58,14 +58,15 @@
     padding:42px 20px 34px;text-align:center;position:relative;
     border-bottom:3px double var(--line-strong);
   }
-  .back-home{
-    position:absolute;top:18px;left:20px;z-index:3;background:var(--brand);
-    border:1px solid var(--brand);color:#fff;padding:7px 16px;font-weight:600;
-    border-radius:2px;font-size:13.5px;cursor:pointer;
+  /* 统一的返回按钮样式 */
+  .back-btn{
+    display:inline-block;background:var(--brand);border:1px solid var(--brand);color:#fff;
+    padding:8px 16px;border-radius:2px;font-size:13.5px;font-weight:600;cursor:pointer;
     transition:transform var(--ease),background var(--ease),border-color var(--ease);
   }
-  .back-home:hover{background:var(--brand2);transform:scale(1.02)}
-  .back-home:active{transform:scale(.98)}
+  .back-btn:hover{background:var(--brand2);transform:scale(1.02)}
+  .back-btn:active{transform:scale(.98)}
+  .back-home{position:absolute;top:18px;left:20px;z-index:3}
   .tag{font-size:11.5px;letter-spacing:4px;color:var(--muted);text-transform:uppercase}
   h1{
     font-family:var(--serif);font-size:36px;font-weight:700;letter-spacing:6px;
@@ -391,13 +392,7 @@
   body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer{display:none}
   body.show-detail #detail{display:block}
   .detail-wrap{max-width:1600px;margin:0 auto;padding:24px 20px 60px}
-  .detail-back{
-    display:inline-block;background:var(--paper);color:var(--brand);border:1px solid var(--line-strong);
-    padding:8px 18px;border-radius:2px;font-size:13.5px;cursor:pointer;margin-bottom:18px;font-weight:600;
-    transition:transform var(--ease),border-color var(--ease),color var(--ease);
-  }
-  .detail-back:hover{border-color:var(--gold);transform:scale(1.02)}
-  .detail-back:active{transform:scale(.98)}
+  .detail-back{margin-bottom:18px}
   .detail-card{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:28px}
   .detail-head{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
   .detail-photo{flex:0 0 220px;max-width:220px}
@@ -462,7 +457,7 @@
 <body class="show-home">
 
   <header class="hero">
-    <button class="back-home" id="homeBtn">← 返回</button>
+    <button class="back-home back-btn" id="homeBtn">← 返回</button>
     <div class="tag">エピファネイア産駒データベース · Epiphaneia Progeny</div>
     <h1>虾铺开张中<span class="beta-tag">Beta</span></h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
@@ -522,14 +517,14 @@
 
   <section id="detail">
     <div class="detail-wrap">
-      <button class="detail-back" id="backBtn">← 返回列表</button>
+      <button class="detail-back back-btn" id="backBtn">← 返回</button>
       <div id="detailBody"></div>
     </div>
   </section>
 
   <section id="changelog">
     <div class="log-wrap">
-      <button class="detail-back" id="logBackBtn">← 返回</button>
+      <button class="detail-back back-btn" id="logBackBtn">← 返回</button>
       <div class="log-card">
         <h2>更新日志</h2>
         <div id="logBody"></div>
@@ -539,7 +534,7 @@
 
   <section id="thisweek">
     <div class="log-wrap">
-      <button class="detail-back" id="twBackBtn">← 返回</button>
+      <button class="detail-back back-btn" id="twBackBtn">← 返回</button>
       <div class="log-card">
         <h2>本周出马</h2>
         <div id="thisweekBody"></div>
@@ -1017,6 +1012,7 @@
 
   // ---------- 详情附加数据（血统/战绩）按需加载 ----------
   let currentDetailKey = null;
+  let preHashClass = 'show-home';  // 进入 hash 详情页之前所在的视图
   const horseDetailCache = {};
   const DETAIL_VER = '20261022';  // 详情文件版本号，避免浏览器使用旧的错误缓存
   function detailExtraHtml(h){
@@ -1056,18 +1052,38 @@
   }
   function route(){
     const m = location.hash.match(/^#\/horse\/(.+)$/);
-    if(m){ openDetail(decodeURIComponent(m[1])); return; }
     const sm = location.hash.match(/^#\/sire\/(.+)$/);
-    if(sm){ openSireDetail(decodeURIComponent(sm[1])); return; }
-    closeDetail();
-  }
-  document.getElementById('backBtn').addEventListener('click', () => {
-    if(location.hash){
-      history.back(); // 回到上一级（触发 hashchange → route → closeDetail）
-    } else {
-      closeDetail();
+    if(m || sm){
+      // 记录进入详情前的视图（列表 / 首页 / 本周出赛 / 更新日志）
+      if(!document.body.classList.contains('show-detail')){
+        preHashClass = document.body.className || 'show-home';
+      }
+      if(m) openDetail(decodeURIComponent(m[1]));
+      else openSireDetail(decodeURIComponent(sm[1]));
+      return;
     }
-  });
+    // 退出 hash 页面：回到进来之前的那一级
+    if(document.body.classList.contains('show-detail')){
+      document.body.className = preHashClass || 'show-home';
+      window.scrollTo(0, 0);
+    }
+  }
+  // 统一的返回：有 hash 就回到浏览器上一级，否则回到上一级视图（首页）
+  function goBack(){
+    if(location.hash){
+      history.back();
+      setTimeout(() => {
+        if(location.hash){
+          history.replaceState(null, '', location.pathname + location.search);
+          document.body.className = preHashClass || 'show-home';
+          window.scrollTo(0, 0);
+        }
+      }, 350);
+    } else {
+      showHome();
+    }
+  }
+  document.getElementById('backBtn').addEventListener('click', goBack);
   document.getElementById('tbody').addEventListener('click', e => {
     const el = e.target.closest('[data-id]');
     if(el) location.hash = '#/horse/' + encodeURIComponent(el.dataset.id);
@@ -1094,11 +1110,7 @@
     renderChangelog();
     window.scrollTo(0, 0);
   });
-  document.getElementById('logBackBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-log');
-    document.body.classList.add('show-home');
-    window.scrollTo(0, 0);
-  });
+  document.getElementById('logBackBtn').addEventListener('click', goBack);
 
   // ---------- 本周出马 ----------
   function dateKey(s){
@@ -1157,11 +1169,7 @@
     renderThisweek();
     window.scrollTo(0, 0);
   });
-  document.getElementById('twBackBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-tw');
-    document.body.classList.add('show-home');
-    window.scrollTo(0, 0);
-  });
+  document.getElementById('twBackBtn').addEventListener('click', goBack);
 
   // ---------- 首页 ----------
   function renderSireCards(){
@@ -1271,7 +1279,7 @@
             <thead><tr><th>马名</th><th>性别</th><th>毛色</th><th>生日</th><th>年龄</th><th>成绩</th><th>状态</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="7">暂无产驹</td></tr>'}</tbody>
           </table>
-          ${kids.length > shown.length ? `<button class="detail-back" id="sireAllBtn" style="margin-top:14px">在产驹列表中查看全部 ${kids.length} 匹 →</button>` : ''}
+          ${kids.length > shown.length ? `<button class="btn-plain" id="sireAllBtn" style="margin-top:14px">在产驹列表中查看全部 ${kids.length} 匹 →</button>` : ''}
         </div>
       </div>`;
     document.body.classList.remove('show-log', 'show-tw', 'show-home');
@@ -1294,7 +1302,7 @@
     const card = e.target.closest('[data-sire]');
     if(card){ e.preventDefault(); gotoCard(card); }
   });
-  document.getElementById('homeBtn').addEventListener('click', showHome);
+  document.getElementById('homeBtn').addEventListener('click', goBack);
   document.querySelectorAll('.nav-card').forEach(c => c.addEventListener('click', () => {
     const nav = c.dataset.nav;
     if(nav === 'list') showList();
