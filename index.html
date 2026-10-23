@@ -1063,18 +1063,23 @@
     const scb = document.getElementById('shareCardBtn');
     if(scb) scb.addEventListener('click', () => {
       const old = scb.textContent;
+      let settled = false;
+      const settle = (ok, msg) => {
+        if(settled) return;
+        settled = true;
+        clearTimeout(watchdog);
+        scb.disabled = false;
+        scb.textContent = ok ? '已生成 ✓' : old;
+        if(ok) setTimeout(() => { scb.textContent = old; }, 1800);
+        if(!ok && msg) alert(msg);
+      };
+      const watchdog = setTimeout(() => settle(false, '生成超时，请再点一次试试'), 15000);
       scb.disabled = true;
       scb.textContent = '生成中…';
       try{
-        makeShareCard(h, false, () => {
-          scb.disabled = false;
-          scb.textContent = '已生成 ✓';
-          setTimeout(() => { scb.textContent = old; }, 1800);
-        });
+        makeShareCard(h, false, () => settle(true));
       }catch(e){
-        scb.disabled = false;
-        scb.textContent = old;
-        alert('生成失败：' + (e && e.message ? e.message : e));
+        settle(false, '生成失败：' + (e && e.message ? e.message : e));
       }
     });
     // 预览模式：URL 加 ?card=1 时直接渲染分享卡（便于检查排版）
@@ -1172,6 +1177,12 @@
           if(done) done();
           return;
         }
+        if(!c.toBlob){
+          // 老浏览器（部分微信/内置浏览器）没有 toBlob，直接打开图片
+          window.open(c.toDataURL('image/png'), '_blank');
+          if(done) done();
+          return;
+        }
         c.toBlob(blob => {
           if(!blob){
             try{ window.open(c.toDataURL('image/png'), '_blank'); }
@@ -1191,6 +1202,8 @@
         if(h.photo){
           finished = false;
           makeShareCard(Object.assign({}, h, {photo:null}), preview, done);
+        } else if(done){
+          done();
         }
       }
     };
@@ -1199,6 +1212,7 @@
     const drawText = () => {
       if(drawn) return;
       drawn = true;
+      try{
       const tx = 410, maxW = W - tx - 70;
       let nameSize = 56;
       ctx.font = nameSize + 'px ' + SERIF;
@@ -1322,7 +1336,11 @@
       ctx.fillText('epimome.cn', 70, H - 62);
       ctx.fillStyle = MUTED; ctx.textAlign = 'right'; ctx.font = '17px ' + SANS;
       ctx.fillText('数据与照片来源 netkeiba.com · 仅供学习交流', W - 70, H - 62);
-      finish();
+      }catch(e){
+        console.error('share card draw error', e);
+      }finally{
+        finish();
+      }
     };
 
     let photoDrawn = false;
