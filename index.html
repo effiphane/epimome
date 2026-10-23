@@ -1226,7 +1226,7 @@
     const m = String(d || '').match(/(\d{3,4})/);
     if(!m) return '?';
     const n = +m[1];
-    return n <= 1400 ? '短' : (n <= 1800 ? '中' : (n <= 2400 ? '长' : '超长'));
+    return n <= 1400 ? '短' : (n <= 1800 ? '英' : (n <= 2400 ? '中' : '长'));
   }
   function buildStats(races){
     const out = {total:{runs:0, wins:0}, surface:{}, distance:{}};
@@ -1256,8 +1256,8 @@
       <div class="stat-total">通算 ${t.runs}戦${t.wins}勝 · 胜率 ${rate.toFixed(1)}%</div>
       <div class="stat-cols">
         <div><h4>场地</h4>${statRowsHtml(st.surface, ['芝','ダ','障','他'])}</div>
-        <div><h4>距离</h4>${statRowsHtml(st.distance, ['短','中','长','超长'])}
-          <div class="stat-note">短～1400m · 中1401-1800 · 长1801-2400 · 超长2401～</div></div>
+        <div><h4>距离</h4>${statRowsHtml(st.distance, ['短','英','中','长'])}
+          <div class="stat-note">短～1400m · 英1401-1800 · 中1801-2400 · 长2401～</div></div>
       </div>
     </div>`;
   }

@@ -435,7 +435,7 @@ def scrape_horse(hid, ped_map, name=None, sex=None):
     return detail
 
 
-DIST_BANDS = [('短', 0, 1400), ('中', 1401, 1800), ('长', 1801, 2400), ('超长', 2401, 99999)]
+DIST_BANDS = [('短', 0, 1400), ('英', 1401, 1800), ('中', 1801, 2400), ('长', 2401, 99999)]
 
 
 def _surface_of(dist):
