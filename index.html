@@ -1061,7 +1061,22 @@
     currentDetailKey = String(h.id || '');
     loadHorseDetail(h);
     const scb = document.getElementById('shareCardBtn');
-    if(scb) scb.addEventListener('click', () => makeShareCard(h));
+    if(scb) scb.addEventListener('click', () => {
+      const old = scb.textContent;
+      scb.disabled = true;
+      scb.textContent = '生成中…';
+      try{
+        makeShareCard(h, false, () => {
+          scb.disabled = false;
+          scb.textContent = '已生成 ✓';
+          setTimeout(() => { scb.textContent = old; }, 1800);
+        });
+      }catch(e){
+        scb.disabled = false;
+        scb.textContent = old;
+        alert('生成失败：' + (e && e.message ? e.message : e));
+      }
+    });
   }
 
   // ---------- 分享卡生成 ----------
@@ -1070,7 +1085,7 @@
     const dw = img.width * s, dh = img.height * s;
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
-  function makeShareCard(h, preview){
+  function makeShareCard(h, preview, done){
     const W = 1080, H = 1350;
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
@@ -1101,7 +1116,10 @@
     const px = 70, py = 250, pw = 300, ph = 400;
     ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.strokeRect(px, py, pw, ph);
 
+    let finished = false;
     const finish = () => {
+      if(finished) return;
+      finished = true;
       try{
         if(preview){
           const im = new Image();
@@ -1109,21 +1127,45 @@
           im.src = c.toDataURL();
           return;
         }
+        // 手机/微信里下载经常无效，改为弹出图片让用户长按保存
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        if(isMobile){
+          const url = c.toDataURL('image/png');
+          const ov = document.createElement('div');
+          ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,18,14,.82);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px';
+          ov.innerHTML = '<img src="' + url + '" style="max-width:100%;max-height:78vh;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.4)"><div style="color:#fff;font-size:14px;opacity:.85">长按图片保存 · 点空白处关闭</div>';
+          ov.addEventListener('click', () => ov.remove());
+          document.body.appendChild(ov);
+          if(done) done();
+          return;
+        }
         c.toBlob(blob => {
-          if(!blob) return;
+          if(!blob){
+            try{ window.open(c.toDataURL('image/png'), '_blank'); }
+            catch(err){ alert('导出失败，请换用电脑浏览器再试'); }
+            if(done) done();
+            return;
+          }
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = (h.name || 'horse') + '_epimome.png';
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+          if(done) done();
         }, 'image/png');
       }catch(e){
         // file:// 本地打开时图片会污染画布，去掉照片重新生成
-        if(h.photo) makeShareCard(Object.assign({}, h, {photo:null}), preview);
+        if(h.photo){
+          finished = false;
+          makeShareCard(Object.assign({}, h, {photo:null}), preview, done);
+        }
       }
     };
 
+    let drawn = false;
     const drawText = () => {
+      if(drawn) return;
+      drawn = true;
       const tx = 410, maxW = W - tx - 70;
       let nameSize = 56;
       ctx.font = nameSize + 'px ' + SERIF;
@@ -1201,8 +1243,11 @@
 
     if(h.photo){
       const img = new Image();
+      // 3 秒内照片没加载出来就先出无照片版本，避免点了没反应
+      const timer = setTimeout(drawText, 3000);
       img.crossOrigin = 'anonymous';
       img.onload = () => {
+        clearTimeout(timer);
         ctx.save();
         ctx.beginPath();
         ctx.rect(px, py, pw, ph);
@@ -1211,7 +1256,7 @@
         ctx.restore();
         drawText();
       };
-      img.onerror = drawText;
+      img.onerror = () => { clearTimeout(timer); drawText(); };
       img.src = h.photo;
     } else {
       drawText();
