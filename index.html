@@ -1050,6 +1050,7 @@
             <div class="detail-info">${info}</div>
             ${h.rec ? `<div class="detail-rec ${recCls}">成绩：${esc(h.rec)}</div>` : ''}
             ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
+            <button class="btn-plain" id="shareCardBtn" style="margin-top:14px;margin-left:10px">生成分享卡</button>
           </div>
         </div>
         <div id="detailExtra"><p class="detail-loading">加载血统与比赛履历…</p></div>
@@ -1059,6 +1060,162 @@
     window.scrollTo(0, 0);
     currentDetailKey = String(h.id || '');
     loadHorseDetail(h);
+    const scb = document.getElementById('shareCardBtn');
+    if(scb) scb.addEventListener('click', () => makeShareCard(h));
+  }
+
+  // ---------- 分享卡生成 ----------
+  function drawCover(ctx, img, x, y, w, h){
+    const s = Math.max(w / img.width, h / img.height);
+    const dw = img.width * s, dh = img.height * s;
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  function makeShareCard(h, preview){
+    const W = 1080, H = 1350;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    const PAPER = '#f8f5ee', INK = '#22241f', GREEN = '#1f3b2c', GOLD = '#a8873f', MUTED = '#7e7a6f', LINE = '#cfc7b3';
+    const SANS = '"PingFang SC","Microsoft YaHei",sans-serif';
+    const SERIF = '"Songti SC","Noto Serif SC","SimSun",serif';
+
+    ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+    for(let i = 0; i < 6000; i++){
+      ctx.fillStyle = 'rgba(120,110,90,' + (Math.random() * 0.05).toFixed(3) + ')';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5);
+    }
+    ctx.strokeStyle = LINE; ctx.lineWidth = 3; ctx.strokeRect(30, 30, W - 60, H - 60);
+    ctx.lineWidth = 1; ctx.strokeRect(42, 42, W - 84, H - 84);
+
+    ctx.textAlign = 'center'; ctx.fillStyle = MUTED; ctx.font = '18px ' + SANS;
+    ctx.fillText('EPIPHANEIA PROGENY DATABASE', W / 2, 105);
+    ctx.font = '42px ' + SERIF;
+    const t1 = '虾', t2 = '铺开张中';
+    const w1 = ctx.measureText(t1).width, w2 = ctx.measureText(t2).width;
+    const x0 = (W - (w1 + 10 + w2)) / 2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = GOLD; ctx.fillText(t1, x0, 172);
+    ctx.fillStyle = GREEN; ctx.fillText(t2, x0 + w1 + 10, 172);
+    ctx.fillStyle = GOLD; ctx.fillRect(W / 2 - 40, 202, 80, 3);
+
+    const px = 70, py = 250, pw = 300, ph = 400;
+    ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.strokeRect(px, py, pw, ph);
+
+    const finish = () => {
+      try{
+        if(preview){
+          const im = new Image();
+          im.onload = () => { document.body.innerHTML = '<img style="max-width:100%" src="' + im.src + '">'; };
+          im.src = c.toDataURL();
+          return;
+        }
+        c.toBlob(blob => {
+          if(!blob) return;
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (h.name || 'horse') + '_epimome.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+        }, 'image/png');
+      }catch(e){
+        // file:// 本地打开时图片会污染画布，去掉照片重新生成
+        if(h.photo) makeShareCard(Object.assign({}, h, {photo:null}), preview);
+      }
+    };
+
+    const drawText = () => {
+      const tx = 410, maxW = W - tx - 70;
+      let nameSize = 56;
+      ctx.font = nameSize + 'px ' + SERIF;
+      while(ctx.measureText(h.name || '').width > maxW && nameSize > 30){
+        nameSize -= 2; ctx.font = nameSize + 'px ' + SERIF;
+      }
+      ctx.fillStyle = GREEN; ctx.textAlign = 'left';
+      ctx.fillText(h.name || '', tx, 310);
+      if(h.en){ ctx.font = 'italic 26px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText(h.en, tx, 352); }
+
+      let bx = tx, by = 382;
+      const badge = (text, bg, fg) => {
+        ctx.font = '20px ' + SANS;
+        const bw = ctx.measureText(text).width + 20;
+        ctx.fillStyle = bg; ctx.fillRect(bx, by, bw, 32);
+        ctx.fillStyle = fg; ctx.fillText(text, bx + 10, by + 23);
+        bx += bw + 10;
+      };
+      if(h.sex) badge(h.sex, ({牡:'#40597a', 牝:'#9a5a6b', セ:'#8b8b84'})[h.sex] || '#8b8b84', '#fff');
+      if(h.color) badge(h.color, '#efe9db', GREEN);
+      if(horseStatus(h)) badge(horseStatus(h), '#efe9db', MUTED);
+
+      const rows = [
+        ['生日', h.bd], ['生年', h.year], ['父', h.sire], ['母', h.dam],
+        ['母父', h.bms], ['调教师', formatTrainer(h.trainer)], ['生产牧场', h.farm]
+      ].filter(r => r[1]);
+      let y = 466;
+      rows.forEach(r => {
+        ctx.font = '20px ' + SANS; ctx.fillStyle = MUTED;
+        ctx.fillText(r[0], tx, y);
+        ctx.font = '22px ' + SANS; ctx.fillStyle = INK;
+        const txt = String(r[1]);
+        ctx.fillText(txt.length > 22 ? txt.slice(0, 22) + '…' : txt, tx + 90, y);
+        y += 38;
+      });
+
+      y = Math.max(y + 16, 760);
+      ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText('成绩', 70, y);
+      ctx.font = '46px ' + SERIF; ctx.fillStyle = GREEN;
+      ctx.fillText(h.rec || '未出走', 140, y + 4);
+
+      const st = buildStats(h.races || []);
+      if(st.total.runs){
+        let sy = y + 70;
+        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED;
+        ctx.fillText('通算 ' + st.total.runs + '戦' + st.total.wins + '勝 · 胜率 ' +
+                     (st.total.wins / st.total.runs * 100).toFixed(1) + '%', 70, sy);
+        sy += 46;
+        const cols = [
+          { title: '场地', data: st.surface, order: ['芝','ダ','障','他'], x: 70 },
+          { title: '距离', data: st.distance, order: ['短','英','中','长'], x: 560 }
+        ];
+        cols.forEach(col => {
+          ctx.font = '20px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText(col.title, col.x, sy);
+          let ry = sy + 34;
+          col.order.forEach(k => {
+            const s = col.data[k]; if(!s) return;
+            const rate = s.runs ? s.wins / s.runs * 100 : 0;
+            ctx.font = '19px ' + SANS; ctx.fillStyle = GREEN; ctx.fillText(k, col.x, ry);
+            ctx.fillStyle = MUTED; ctx.fillText(s.runs + '戦' + s.wins + '勝', col.x + 40, ry);
+            ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(rate.toFixed(0) + '%', col.x + 420, ry); ctx.textAlign = 'left';
+            ctx.fillStyle = '#e2ddcf'; ctx.fillRect(col.x + 40, ry + 10, 330, 4);
+            ctx.fillStyle = GOLD; ctx.fillRect(col.x + 40, ry + 10, 330 * rate / 100, 4);
+            ry += 38;
+          });
+        });
+      }
+
+      ctx.font = '22px ' + SANS; ctx.fillStyle = GOLD; ctx.textAlign = 'left';
+      ctx.fillText('epimome.cn', 70, H - 62);
+      ctx.fillStyle = MUTED; ctx.textAlign = 'right'; ctx.font = '17px ' + SANS;
+      ctx.fillText('数据与照片来源 netkeiba.com · 仅供学习交流', W - 70, H - 62);
+      finish();
+    };
+
+    if(h.photo){
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, pw, ph);
+        ctx.clip();
+        drawCover(ctx, img, px + 1, py + 1, pw - 2, ph - 2);
+        ctx.restore();
+        drawText();
+      };
+      img.onerror = drawText;
+      img.src = h.photo;
+    } else {
+      drawText();
+    }
   }
 
   // ---------- 详情附加数据（血统/战绩）按需加载 ----------
