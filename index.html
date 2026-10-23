@@ -339,10 +339,10 @@
   }
   .nav-card:hover{border-color:var(--gold);transform:translateY(-2px) scale(1.01);background:#fdfaf2}
   .nav-card:active{transform:scale(.99)}
-  .home-updates,.home-birthday,.home-thisweek{
+  .home-updates,.home-birthday,.home-thisweek,.home-news,.home-videos{
     background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:20px 22px;margin-bottom:16px;
   }
-  .home-updates h2,.home-birthday h2,.home-thisweek h2{
+  .home-updates h2,.home-birthday h2,.home-thisweek h2,.home-news h2,.home-videos h2{
     font-family:var(--serif);font-size:15px;letter-spacing:2px;color:var(--brand);
     margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);
   }
@@ -367,6 +367,18 @@
   }
   .home-tw-item a:hover{color:var(--gold)}
   .home-tw-item span{color:var(--muted);font-size:12.5px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .home-news ul{list-style:none;max-height:320px;overflow-y:auto}
+  .news-item{padding:8px 0;border-bottom:1px dotted var(--line);font-size:13.5px}
+  .news-item a{color:var(--brand);font-weight:600;text-decoration:none;transition:color var(--ease)}
+  .news-item a:hover{color:var(--gold)}
+  .news-item .meta{color:var(--muted);font-size:12px;margin-left:8px}
+  .news-summary{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .video-card{display:block;border:1px solid var(--line);border-radius:2px;padding:12px;text-decoration:none;background:var(--paper);transition:border-color var(--ease),transform var(--ease)}
+  .video-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .video-cover{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:8px;background:#f0ece2;display:block}
+  .video-card .vtitle{font-weight:600;font-size:13.5px;color:var(--ink);display:block}
+  .video-card .vmeta{color:var(--muted);font-size:12px;margin-top:4px;display:block}
   .home-feedback{
     display:block;margin:8px auto 0;background:transparent;color:var(--muted);
     border:1px solid var(--line-strong);padding:9px 26px;border-radius:2px;
@@ -486,7 +498,7 @@
         <div id="colorChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
       <div class="frow">
-        <span class="flabel">年龄</span>
+        <span class="flabel">生年</span>
         <select id="ageSel"></select>
         <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
         <span class="spacer"></span>
@@ -571,6 +583,10 @@
         <h2>信息更新</h2>
         <ul id="homeUpdates"></ul>
       </div>
+      <div class="home-news" id="homeNews" hidden>
+        <h2>中文资讯</h2>
+        <ul id="newsList"></ul>
+      </div>
       <div class="home-thisweek">
         <h2>本周出赛</h2>
         <div id="homeTwBody"></div>
@@ -578,6 +594,10 @@
       <div class="home-birthday">
         <h2>今日寿星</h2>
         <div id="birthdayBody"></div>
+      </div>
+      <div class="home-videos" id="homeVideos" hidden>
+        <h2>视频</h2>
+        <div class="video-grid" id="videoList"></div>
       </div>
       <button class="home-feedback" id="feedbackBtn">反馈 / 报错</button>
     </div>
@@ -604,6 +624,8 @@
 <script src="thisweek.js?v=2026102307"></script>
 <script src="corrections.js?v=2026102307"></script>
 <script src="sire-info.js?v=2026102307"></script>
+<script src="news.js?v=2026102307"></script>
+<script src="videos.js?v=2026102307"></script>
 <script>
   const data = 产驹数据;
   const PER_PAGE = 20;
@@ -664,7 +686,7 @@
   // ---------- 状态 ----------
   const state = {
     q:'', sire:'全部', sex:'全部', color:'全部',
-    farm:'', owner:'', trainer:'', age:'',
+    farm:'', owner:'', trainer:'', year:'',
     winnerOnly:false,
     sortKey:null, sortDir:1,
     view:'table', page:1
@@ -707,12 +729,12 @@
     const colors = [...new Set([...COLOR_ORDER.filter(c=>data.some(h=>h.color===c)), ...distinct('color')])];
     document.getElementById('colorChips').innerHTML = chipsHtml(colors, 'color');
 
-    const ages = [...new Set(data.map(h => horseAge(h)).filter(a => a != null))].sort((a,b) => a-b);
+    const years = [...new Set(data.map(h => h.year).filter(y => y != null))].sort((a,b) => b-a);
     const ageSel = document.getElementById('ageSel');
     let ageHtml = '<option value="">全部</option>';
-    ages.forEach(a => ageHtml += `<option value="${a}">${a}岁</option>`);
+    years.forEach(y => ageHtml += `<option value="${y}">${y}年</option>`);
     ageSel.innerHTML = ageHtml;
-    ageSel.value = state.age;
+    ageSel.value = state.year;
   }
 
   // ---------- 筛选逻辑 ----------
@@ -725,7 +747,7 @@
       if(state.farm && h.farm !== state.farm) return false;
       if(state.owner && h.owner !== state.owner) return false;
       if(state.trainer && h.trainer !== state.trainer) return false;
-      if(state.age && horseAge(h) !== parseInt(state.age, 10)) return false;
+      if(state.year && String(h.year) !== String(state.year)) return false;
       if(state.winnerOnly && parseRec(h.rec).wins < 1) return false;
       if(q){
         const hay = `${h.name||''} ${h.en||''} ${h.dam||''} ${h.bms||''} ${h.farm||''} ${h.owner||''} ${h.trainer||''}`.toLowerCase();
@@ -738,7 +760,7 @@
   function sortVal(h, key){
     if(key === 'rec'){ const p = parseRec(h.rec); return p.wins*1000 + p.races; }
     if(key === 'bd') return bdVal(h.bd);
-    if(key === 'age') return (h.year != null) ? (currentYear - h.year) : 9999;
+    if(key === 'year') return (h.year != null) ? h.year : 0;
     if(key === 'prize') return (h.prize != null) ? h.prize : -1;
     return String(h[key] == null ? '' : h[key]);
   }
@@ -763,7 +785,7 @@
     {key:'sex',    label:'性别'},
     {key:'color',  label:'毛色'},
     {key:'bd',     label:'生日'},
-    {key:'age',    label:'年龄'},
+    {key:'year',   label:'生年'},
     {key:'dam',    label:'母名'},
     {key:'bms',    label:'母父'},
     {key:'trainer',label:'调教师'},
@@ -802,7 +824,7 @@
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
       <td>${colorBadge(h.color)}</td>
       <td>${esc(h.bd||'')}</td>
-      <td>${horseAge(h) != null ? horseAge(h) + '岁' : '—'}</td>
+      <td>${h.year != null ? esc(h.year) : '—'}</td>
       <td>${esc(h.dam||'')}</td>
       <td>${esc(h.bms||'')}</td>
       <td>${esc(formatTrainer(h.trainer))}</td>
@@ -902,12 +924,12 @@
     chipClick('color', b.dataset.v);
   });
 
-  document.getElementById('ageSel').addEventListener('change', e => { state.age = e.target.value; state.page = 1; render(); });
+  document.getElementById('ageSel').addEventListener('change', e => { state.year = e.target.value; state.page = 1; render(); });
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
 
   document.getElementById('resetBtn').addEventListener('click', () => {
     state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
-    state.farm=''; state.owner=''; state.trainer=''; state.age='';
+    state.farm=''; state.owner=''; state.trainer=''; state.year='';
     state.winnerOnly=false; state.sortKey=null; state.page=1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
@@ -922,7 +944,7 @@
       state.sortDir *= -1;
     } else {
       state.sortKey = key;
-      state.sortDir = (key === 'rec' || key === 'bd') ? -1 : 1;
+      state.sortDir = (key === 'rec' || key === 'bd' || key === 'year') ? -1 : 1;
     }
     renderThead(); state.page = 1; render();
   });
@@ -987,11 +1009,17 @@
     if(!h.rec) recCls += ' none'; else if(p.wins > 0) recCls += ' won'; else recCls += ' zero';
     const nk = h.id ? `https://db.netkeiba.com/horse/${h.id}/` : '';
     const photo = h.photo ? `<div class="detail-photo"><img src="${esc(h.photo)}" alt="${esc(h.name)}" onerror="this.parentElement.style.display='none'"></div>` : '';
-    const info = [
-      ['种马', h.sire], ['性别', h.sex], ['毛色', h.color], ['生日', h.bd],
+    const infoList = [
+      ['种马', h.sire], ['性别', h.sex], ['毛色', h.color], ['生日', h.bd], ['生年', h.year],
       ['母名', h.dam], ['母父', h.bms], ['生产牧场', h.farm], ['马主', h.owner],
       ['调教师', formatTrainer(h.trainer)], ['募集价格', h.raise], ['拍卖价格', h.auction]
-    ].filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+    ];
+    // 现役马才显示年龄（像 netkeiba）；已去世/退役的不显示
+    if(horseStatus(h) === '現役'){
+      const age = horseAge(h);
+      if(age != null) infoList.splice(5, 0, ['年龄', age + '岁']);
+    }
+    const info = infoList.filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
     document.getElementById('detailBody').innerHTML = `
       <div class="detail-card">
         <div class="detail-head">
@@ -1251,6 +1279,29 @@
     if(!de.length){ el.innerHTML = '<li>暂无更新</li>'; return; }
     el.innerHTML = de.slice(0, 8).map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('');
   }
+  function renderNews(){
+    const list = (typeof 中文资讯 !== 'undefined') ? 中文资讯.slice() : [];
+    const box = document.getElementById('homeNews');
+    const ul = document.getElementById('newsList');
+    if(!box || !ul) return;
+    if(!list.length){ box.hidden = true; return; }
+    list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    ul.innerHTML = list.map(n => `<li class="news-item"><a href="${esc(n.url || '#')}" target="_blank" rel="noopener">${esc(n.title || '')}</a><span class="meta">${esc(n.date || '')}${n.source ? ' · ' + esc(n.source) : ''}</span>${n.summary ? `<div class="news-summary">${esc(n.summary)}</div>` : ''}</li>`).join('');
+    box.hidden = false;
+  }
+  function renderVideos(){
+    const list = (typeof 视频列表 !== 'undefined') ? 视频列表 : [];
+    const box = document.getElementById('homeVideos');
+    const el = document.getElementById('videoList');
+    if(!box || !el) return;
+    if(!list.length){ box.hidden = true; return; }
+    el.innerHTML = list.map(v => {
+      const url = 'https://www.bilibili.com/video/' + encodeURIComponent(v.bvid || '');
+      const cover = v.cover ? `<img class="video-cover" src="${esc(v.cover)}" alt="" loading="lazy">` : '';
+      return `<a class="video-card" href="${url}" target="_blank" rel="noopener">${cover}<span class="vtitle">${esc(v.title || '')}</span><span class="vmeta">B站${v.up ? ' · ' + esc(v.up) : ''}</span></a>`;
+    }).join('');
+    box.hidden = false;
+  }
   function renderBirthday(){
     const now = new Date();
     const todayKey = (now.getMonth() + 1) + '.' + now.getDate();
@@ -1269,6 +1320,8 @@
     renderHomeUpdates();
     renderBirthday();
     renderHomeTw();
+    renderNews();
+    renderVideos();
     window.scrollTo(0, 0);
   }
   function showList(){
@@ -1278,7 +1331,7 @@
   }
   function openSireList(sire){
     state.sire = sire; state.sex = '全部'; state.color = '全部'; state.q = '';
-    state.age = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
+    state.year = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
     history.replaceState(null, '', location.pathname + location.search);
@@ -1304,7 +1357,7 @@
         <td><span class="sex ${sexClass[h.sex] || 'geld'}">${esc(h.sex || '')}</span></td>
         <td>${colorBadge(h.color)}</td>
         <td>${esc(h.bd || '')}</td>
-        <td>${horseAge(h) != null ? horseAge(h) + '岁' : '—'}</td>
+        <td>${h.year != null ? esc(h.year) : '—'}</td>
         <td>${esc(h.rec || '—')}</td>
         <td>${statusBadge(horseStatus(h))}</td>
       </tr>`).join('');
@@ -1323,7 +1376,7 @@
         <div class="wins-box">
           <h3>店员（产驹）${kids.length} 匹${kids.length > shown.length ? ` · 先显示前 ${shown.length} 匹` : ''}</h3>
           <table class="wins-table">
-            <thead><tr><th>马名</th><th>性别</th><th>毛色</th><th>生日</th><th>年龄</th><th>成绩</th><th>状态</th></tr></thead>
+            <thead><tr><th>马名</th><th>性别</th><th>毛色</th><th>生日</th><th>生年</th><th>成绩</th><th>状态</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="7">暂无产驹</td></tr>'}</tbody>
           </table>
           ${kids.length > shown.length ? `<button class="btn-plain" id="sireAllBtn" style="margin-top:14px">在产驹列表中查看全部 ${kids.length} 匹 →</button>` : ''}
@@ -1392,6 +1445,8 @@
   renderHomeUpdates();
   renderBirthday();
   renderHomeTw();
+  renderNews();
+  renderVideos();
 </script>
 </body>
 </html>
