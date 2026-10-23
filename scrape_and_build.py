@@ -568,6 +568,42 @@ def get_race_class(race_id):
     return get_race_info(race_id)['cls']
 
 
+_race_entries_cache = {}
+
+
+def get_race_entries(race_id):
+    """从出马表页抓取 {马名: 马番}（闸位），失败返回空字典"""
+    if not race_id:
+        return {}
+    if race_id in _race_entries_cache:
+        return _race_entries_cache[race_id]
+    out = {}
+    try:
+        r = requests.get(f'https://{_race_host(race_id)}/race/shutuba.html?race_id={race_id}',
+                         headers=HEADERS, timeout=30)
+        r.encoding = 'utf-8'
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            for tr in soup.find_all('tr'):
+                a = tr.find('a', href=re.compile(r'/horse/\d+/'))
+                if not a:
+                    continue
+                name = a.get_text(strip=True)
+                nums = []
+                for td in tr.find_all('td')[:4]:
+                    t = td.get_text(strip=True)
+                    if re.fullmatch(r'\d{1,2}', t):
+                        nums.append(t)
+                if name and nums:
+                    # 出马表前两列一般是 枠 和 馬番，取第二个；只有一个就取它
+                    out[name] = nums[1] if len(nums) >= 2 else nums[0]
+    except Exception:
+        pass
+    time.sleep(0.2)
+    _race_entries_cache[race_id] = out
+    return out
+
+
 def date_from_race_id(race_id):
     """从地方赛事(nar)race_id 提取真实日期，失败返回 None。
 
@@ -658,6 +694,8 @@ def scrape_thisweek():
                     info = get_race_info(race_id) if race_id else {'cls': '', 'time': ''}
                     cls = info['cls'] or classify_race(race_name)
                     start_time = info['time']
+                    # 中央赛事从出马表页补抓马番（闸位）
+                    entries = get_race_entries(race_id) if (race_id and region == '中央') else {}
                     for li in race_block.find_all('li'):
                         na = li.find('a', class_='EntryHorseList_HorseName')
                         if not na:
@@ -679,7 +717,8 @@ def scrape_thisweek():
                             'race': f'{race_num} {race_name}'.strip(),
                             'cls': cls,
                             'status': race_status, 'name': name, 'id': hid,
-                            'jockey': jockey, 'fav': fav, 'order': order, 'num': num,
+                            'jockey': jockey, 'fav': fav, 'order': order,
+                            'num': num or entries.get(name, ''),
                             'sire': sire, 'region': region,
                         })
     # 按日期 + 开赛时间排序（无时间的排在当天最后）
@@ -755,7 +794,24 @@ def make_week_image(runners):
                 return True
         return False
 
-    rows = sorted([r for r in runners if in_week(r)],
+    WD = ['月', '火', '水', '木', '金', '土', '日']
+
+    def date_label(s):
+        v = md(s)
+        if not v:
+            return str(s or '')
+        if re.search(r'[（(][月火水木金土日][）)]', s or ''):
+            return s
+        y = sun.year if (v[0] == 1 and mon.month == 12) else mon.year
+        try:
+            d = datetime.date(y, v[0], v[1])
+        except ValueError:
+            return str(s or '')
+        return f'{v[0]}月{v[1]}日({WD[d.weekday()]})'
+
+    # 只保留中央（JRA）赛事
+    rows = sorted([r for r in runners
+                   if in_week(r) and (r.get('region') or '中央') == '中央'],
                   key=lambda r: (md(r.get('date')) or (99, 99), r.get('time') or '99:99'))
 
     W = 1200
@@ -796,8 +852,8 @@ def make_week_image(runners):
     d.text(((W - tw(sub, f_sub)) / 2, 170), sub, font=f_sub, fill=MUTED)
     d.rectangle([W // 2 - 30, 210, W // 2 + 30, 213], fill=GOLD)
 
-    cols = [('日期', pad), ('时间', 168), ('赛事', 258), ('马名', 676),
-            ('骑手', 874), ('人气', 1000), ('着順', 1070)]
+    cols = [('日期', pad), ('时间', 212), ('闸位', 278), ('赛事', 336),
+            ('马名', 622), ('骑手', 826), ('人气', 956), ('着順', 1026)]
     y = header_h - 34
     d.line([pad, y + 30, W - pad, y + 30], fill=(207, 199, 179), width=2)
     for label, x in cols:
@@ -814,22 +870,23 @@ def make_week_image(runners):
     y = header_h
     last_date = None
     for r in rows:
-        date = r.get('date') or ''
+        date = date_label(r.get('date'))
         if date != last_date:
             d.line([pad, y - 4, W - pad, y - 4], fill=LINE, width=1)
             d.text((pad, y + 10), date, font=f_cell, fill=GREEN)
             last_date = date
-        d.text((168, y + 10), clip(r.get('time'), 80, f_cell), font=f_cell, fill=INK)
-        d.text((258, y + 10), clip(r.get('race'), 400, f_cell), font=f_cell, fill=INK)
-        d.text((676, y + 10), clip(r.get('name'), 186, f_cell), font=f_cell, fill=GREEN)
-        d.text((874, y + 10), clip(r.get('jockey'), 116, f_cell), font=f_cell, fill=INK)
-        d.text((1000, y + 10), clip(r.get('fav'), 62, f_cell), font=f_cell, fill=MUTED)
+        d.text((212, y + 10), clip(r.get('time'), 56, f_cell), font=f_cell, fill=INK)
+        d.text((278, y + 10), clip(r.get('num'), 46, f_cell), font=f_cell, fill=MUTED)
+        d.text((336, y + 10), clip(r.get('race'), 278, f_cell), font=f_cell, fill=INK)
+        d.text((622, y + 10), clip(r.get('name'), 196, f_cell), font=f_cell, fill=GREEN)
+        d.text((826, y + 10), clip(r.get('jockey'), 122, f_cell), font=f_cell, fill=INK)
+        d.text((956, y + 10), clip(r.get('fav'), 58, f_cell), font=f_cell, fill=MUTED)
         order = str(r.get('order') or '').strip()
         if order:
             bg = RANK_BG.get(int(order)) if order.isdigit() and 1 <= int(order) <= 3 else GRAY_BG
             fg = INK if order in ('1', '2', '3') else (255, 255, 255)
             bw = max(34, tw(order, f_small) + 18)
-            bx = 1070
+            bx = 1026
             d.rounded_rectangle([bx, y + 8, bx + bw, y + 36], radius=3, fill=bg)
             d.text((bx + (bw - tw(order, f_small)) / 2, y + 10), order, font=f_small, fill=fg)
         y += row_h
