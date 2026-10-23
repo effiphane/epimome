@@ -462,12 +462,22 @@ def update_changelog(count):
     add_update_entry(f'更新产驹数据（{count}匹）')
 
 
+_GRADE_MAP = {'Ⅰ': '1', 'Ⅱ': '2', 'Ⅲ': '3', 'I': '1', '1': '1', '2': '2', '3': '3'}
+
+
+def _race_grade(text):
+    """从 '(GⅠ)' / '(G1)' 这类标注里提取 G1/G2/G3"""
+    m = re.search(r'\(G\s*([ⅠⅡⅢI123])\)', text or '')
+    return 'G' + _GRADE_MAP[m.group(1)] if m else None
+
+
 def classify_race(name):
     """根据赛事名判断赛事级别"""
     if not name:
         return ''
-    if re.search(r'\(G[I123]\)', name):
-        return '分级赛'
+    grade = _race_grade(name)
+    if grade:
+        return grade
     if 'リステッド' in name or re.search(r'\(L\)', name):
         return '表列赛'
     if 'オープン' in name or '(OP)' in name:
@@ -486,11 +496,12 @@ def classify_race(name):
 
 
 def classify_race_from_title(title):
-    """从赛事页标题判断准确级别"""
+    """从赛事页标题判断准确级别（G1/G2/G3/表列赛…）"""
     if not title:
         return ''
-    if re.search(r'\(G', title):
-        return '分级赛'
+    grade = _race_grade(title)
+    if grade:
+        return grade
     if 'リステッド' in title or re.search(r'\(L\)', title):
         return '表列赛'
     if 'オープン' in title:
@@ -519,7 +530,7 @@ def _race_host(race_id):
 def get_race_info(race_id):
     """从赛事页获取准确级别 + 开赛时间（北京时间，带缓存）
 
-    返回 {'cls': '分级赛', 'time': '15:40'}，取不到的字段为空字符串。
+    返回 {'cls': 'G1', 'time': '15:40'}，取不到的字段为空字符串。
     日本时间与北京时间差 1 小时，这里直接换算成北京时间。
     """
     if not race_id:
@@ -688,6 +699,158 @@ def write_thisweek(runners):
     print(f'已写入 thisweek.js（{len(runners)} 匹出赛）', flush=True)
 
 
+WEEK_IMG_DIR = 'weekly'
+_SERIF_PATHS = [
+    r'C:\Windows\Fonts\simsun.ttc',
+    '/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc',
+    '/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc',
+]
+_SANS_PATHS = [
+    r'C:\Windows\Fonts\msyh.ttc',
+    '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+    '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',
+]
+
+
+def _load_font(paths, size):
+    from PIL import ImageFont
+    for p in paths:
+        if os.path.exists(p):
+            try:
+                return ImageFont.truetype(p, size, index=0)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+
+def make_week_image(runners):
+    """生成本周出赛表图片：weekly/latest.png（最新）+ weekly/{周一日期}.png（每周一张）"""
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        print('未安装 Pillow，跳过出赛表图片生成', flush=True)
+        return
+    import datetime
+
+    BJ = datetime.timezone(datetime.timedelta(hours=8))
+    now = datetime.datetime.now(BJ)
+    mon = (now - datetime.timedelta(days=now.weekday())).date()
+    sun = mon + datetime.timedelta(days=6)
+
+    def md(s):
+        m = re.search(r'(\d{1,2})月(\d{1,2})日', s or '')
+        return (int(m.group(1)), int(m.group(2))) if m else None
+
+    def in_week(r):
+        v = md(r.get('date'))
+        if not v:
+            return False
+        for y in (mon.year, sun.year):
+            try:
+                d = datetime.date(y, v[0], v[1])
+            except ValueError:
+                continue
+            if mon <= d <= sun:
+                return True
+        return False
+
+    rows = sorted([r for r in runners if in_week(r)],
+                  key=lambda r: (md(r.get('date')) or (99, 99), r.get('time') or '99:99'))
+
+    W = 1200
+    pad = 56
+    row_h = 46
+    header_h = 250
+    footer_h = 90
+    H = header_h + max(1, len(rows)) * row_h + footer_h
+
+    PAPER = (248, 245, 238); GREEN = (31, 59, 44); GOLD = (168, 135, 63)
+    MUTED = (126, 122, 111); LINE = (226, 221, 207); INK = (34, 36, 31)
+    RANK_BG = {1: (229, 194, 100), 2: (206, 211, 213), 3: (216, 164, 113)}
+    GRAY_BG = (139, 139, 132)
+
+    img = Image.new('RGB', (W, H), PAPER)
+    d = ImageDraw.Draw(img)
+    d.rectangle([24, 24, W - 24, H - 24], outline=(207, 199, 179), width=3)
+
+    f_kick = _load_font(_SANS_PATHS, 18)
+    f_title = _load_font(_SERIF_PATHS, 46)
+    f_sub = _load_font(_SANS_PATHS, 22)
+    f_head = _load_font(_SANS_PATHS, 20)
+    f_cell = _load_font(_SANS_PATHS, 20)
+    f_small = _load_font(_SANS_PATHS, 18)
+
+    def tw(t, f):
+        b = d.textbbox((0, 0), t, font=f)
+        return b[2] - b[0]
+
+    kicker = 'EPIPHANEIA PROGENY DATABASE'
+    d.text(((W - tw(kicker, f_kick)) / 2, 66), kicker, font=f_kick, fill=MUTED)
+    t1, t2 = '虾', '铺开张中'
+    w1, w2 = tw(t1, f_title), tw(t2, f_title)
+    x0 = (W - (w1 + 18 + w2)) / 2
+    d.text((x0, 100), t1, font=f_title, fill=GOLD)
+    d.text((x0 + w1 + 18, 100), t2, font=f_title, fill=GREEN)
+    sub = f'本周出赛 · {mon.month}月{mon.day}日 – {sun.month}月{sun.day}日'
+    d.text(((W - tw(sub, f_sub)) / 2, 170), sub, font=f_sub, fill=MUTED)
+    d.rectangle([W // 2 - 30, 210, W // 2 + 30, 213], fill=GOLD)
+
+    cols = [('日期', pad), ('时间', 168), ('赛事', 258), ('马名', 676),
+            ('骑手', 874), ('人气', 1000), ('着順', 1070)]
+    y = header_h - 34
+    d.line([pad, y + 30, W - pad, y + 30], fill=(207, 199, 179), width=2)
+    for label, x in cols:
+        d.text((x, y), label, font=f_head, fill=MUTED)
+
+    def clip(t, maxw, f):
+        t = str(t or '')
+        if tw(t, f) <= maxw:
+            return t
+        while t and tw(t + '…', f) > maxw:
+            t = t[:-1]
+        return t + '…'
+
+    y = header_h
+    last_date = None
+    for r in rows:
+        date = r.get('date') or ''
+        if date != last_date:
+            d.line([pad, y - 4, W - pad, y - 4], fill=LINE, width=1)
+            d.text((pad, y + 10), date, font=f_cell, fill=GREEN)
+            last_date = date
+        d.text((168, y + 10), clip(r.get('time'), 80, f_cell), font=f_cell, fill=INK)
+        d.text((258, y + 10), clip(r.get('race'), 400, f_cell), font=f_cell, fill=INK)
+        d.text((676, y + 10), clip(r.get('name'), 186, f_cell), font=f_cell, fill=GREEN)
+        d.text((874, y + 10), clip(r.get('jockey'), 116, f_cell), font=f_cell, fill=INK)
+        d.text((1000, y + 10), clip(r.get('fav'), 62, f_cell), font=f_cell, fill=MUTED)
+        order = str(r.get('order') or '').strip()
+        if order:
+            bg = RANK_BG.get(int(order)) if order.isdigit() and 1 <= int(order) <= 3 else GRAY_BG
+            fg = INK if order in ('1', '2', '3') else (255, 255, 255)
+            bw = max(34, tw(order, f_small) + 18)
+            bx = 1070
+            d.rounded_rectangle([bx, y + 8, bx + bw, y + 36], radius=3, fill=bg)
+            d.text((bx + (bw - tw(order, f_small)) / 2, y + 10), order, font=f_small, fill=fg)
+        y += row_h
+
+    if not rows:
+        d.text((pad, header_h + 20), '本周暂无产驹出赛', font=f_cell, fill=MUTED)
+
+    foot_y = H - 66
+    d.line([pad, foot_y - 16, W - pad, foot_y - 16], fill=LINE, width=1)
+    d.text((pad, foot_y), 'epimome.cn', font=f_small, fill=GOLD)
+    note = '数据来源 netkeiba.com · 仅供学习交流'
+    d.text((W - pad - tw(note, f_small), foot_y), note, font=f_small, fill=MUTED)
+
+    os.makedirs(WEEK_IMG_DIR, exist_ok=True)
+    latest = os.path.join(WEEK_IMG_DIR, 'latest.png')
+    week_file = os.path.join(WEEK_IMG_DIR, f'{mon.isoformat()}.png')
+    img.save(latest, optimize=True)
+    img.save(week_file, optimize=True)
+    print(f'已生成出赛表图片 {week_file}（{len(rows)} 条）', flush=True)
+
+
 def main():
     t0 = time.time()
     os.makedirs(PHOTO_DIR, exist_ok=True)
@@ -759,6 +922,10 @@ def main():
     tw = scrape_thisweek()
     if len(tw) >= MIN_THISWEEK:
         write_thisweek(tw)
+        try:
+            make_week_image(tw)
+        except Exception as e:
+            print(f'出赛表图片生成失败（不影响数据）：{e}', flush=True)
     else:
         print(f'本周出赛抓取异常（{len(tw)} 条），保留旧数据', flush=True)
 

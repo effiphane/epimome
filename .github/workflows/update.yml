@@ -21,7 +21,9 @@ jobs:
           python-version: '3.12'
 
       - name: 安装依赖
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install requests beautifulsoup4 pillow
+          sudo apt-get install -y fonts-noto-cjk || true
 
       - name: 抓取并生成 data.js
         run: python scrape_and_build.py
@@ -32,7 +34,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.js detail/ photos/ updates.js thisweek.js
+          git add data.js detail/ photos/ updates.js thisweek.js weekly/
           if git diff --cached --quiet; then
             echo "数据无变化，跳过提交"
           else

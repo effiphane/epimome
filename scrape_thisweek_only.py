@@ -7,4 +7,8 @@ runners = sb.scrape_thisweek()
 if len(runners) < sb.MIN_THISWEEK:
     sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')
 sb.write_thisweek(runners)
+try:
+    sb.make_week_image(runners)
+except Exception as e:
+    print(f'出赛表图片生成失败（不影响数据）：{e}')
 sb.add_update_entry(f'更新本周出赛（{len(runners)}匹）')
