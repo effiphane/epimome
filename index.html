@@ -1169,8 +1169,7 @@
   }
   function renderThisweek(){
     const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
-    // 只显示中央（JRA）赛事，且限定本周
-    const list = sortByDate(all.filter(r => (r.region || '中央') === '中央' && inThisWeek(r.date)));
+    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
     const rangeEl = document.getElementById('twRange');
     if(rangeEl){
       const [mon, sun] = weekRange();
@@ -1185,7 +1184,7 @@
       return;
     }
     const shownDates = new Set();
-    let html = '<table class="tw-table"><thead><tr><th>日期</th><th>时间</th><th>闸位</th><th>赛事</th><th>马名</th><th>骑手</th><th>人気</th><th>着順</th><th>种马</th></tr></thead><tbody>';
+    let html = '<table class="tw-table"><thead><tr><th>日期</th><th>时间</th><th>闸位</th><th>赛事</th><th>马名</th><th>骑手</th><th>人気</th><th>着順</th><th>种马</th><th>地区</th></tr></thead><tbody>';
     list.forEach(r => {
       const sc = sireClass[r.sire] || '';
       const dkey = withWeekday(r.date);
@@ -1201,6 +1200,7 @@
         <td>${esc(r.fav||'')}</td>
         <td>${rankBadge(r.order)}</td>
         <td><span class="dot ${sc}"></span>${esc(r.sire||'')}</td>
+        <td>${esc(r.region||'')}</td>
       </tr>`;
     });
     html += '</tbody></table>';
@@ -1368,7 +1368,7 @@
   // ---------- 本周出赛栏目（首页固定位置） ----------
   function renderHomeTw(){
     const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
-    const list = sortByDate(all.filter(r => (r.region || '中央') === '中央' && inThisWeek(r.date)));
+    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
     const el = document.getElementById('homeTwBody');
     if(!el) return;
     const items = list.slice(0, 15).map(r =>
