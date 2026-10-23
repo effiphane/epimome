@@ -1093,7 +1093,27 @@
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
   function makeShareCard(h, preview, done){
-    const W = 1080, H = 1620;
+    const W = 1080;
+    const races = (h.races || []).slice()
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const levels = (() => {
+      const out = [];
+      let lv = h.ped ? [{node: h.ped.s, side: 's'}, {node: h.ped.d, side: 'd'}] : [];
+      while(lv.length && out.length < 5){
+        out.push(lv);
+        const nx = [];
+        lv.forEach(x => {
+          if(x.node && x.node.s) nx.push({node: x.node.s, side: x.side});
+          if(x.node && x.node.d) nx.push({node: x.node.d, side: x.side});
+        });
+        lv = nx;
+      }
+      return out;
+    })();
+    const PED_TOP = 890, PED_ROW = 26, PED_ROWS = 32;
+    const RACES_TOP = PED_TOP + PED_ROWS * PED_ROW + 60;
+    const racesH = races.length ? 34 + races.length * 34 + 15 : 30;
+    const H = RACES_TOP + racesH + 110;
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
@@ -1220,57 +1240,75 @@
       ctx.font = '46px ' + SERIF; ctx.fillStyle = GREEN;
       ctx.fillText(h.rec || '未出走', 140, 784);
 
-      // 血统（3代）
-      const ped = h.ped;
-      if(ped){
-        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText('血统（3代）', 70, 852);
-        const gen = [
-          ['父', ped.s && ped.s.n, '母', ped.d && ped.d.n],
-          ['父父', ped.s && ped.s.s && ped.s.s.n, '母父', ped.d && ped.d.s && ped.d.s.n],
-          ['父母', ped.s && ped.s.d && ped.s.d.n, '母母', ped.d && ped.d.d && ped.d.d.n]
-        ];
-        gen.forEach((g, i) => {
-          const ry = 896 + i * 38;
-          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
-          ctx.fillText(g[0], 70, ry);
-          ctx.fillText(g[2], 560, ry);
-          ctx.font = '20px ' + SANS; ctx.fillStyle = INK;
-          ctx.fillText(clipText(ctx, g[1] || '—', 330), 130, ry);
-          ctx.fillText(clipText(ctx, g[3] || '—', 330), 620, ry);
+      // 血统（5代）
+      if(levels.length){
+        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED;
+        ctx.fillText('血统（5代）', 70, 852);
+        const tx0 = 60, tw = 960, cw = tw / 5;
+        ctx.font = '16px ' + SANS; ctx.fillStyle = MUTED;
+        for(let g = 0; g < levels.length; g++){
+          ctx.fillText('第' + (g + 1) + '代', tx0 + g * cw + 6, PED_TOP - 10);
+        }
+        ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+        ctx.strokeRect(tx0, PED_TOP, tw, PED_ROWS * PED_ROW);
+        for(let g = 1; g < 5; g++){
+          ctx.beginPath();
+          ctx.moveTo(tx0 + g * cw, PED_TOP);
+          ctx.lineTo(tx0 + g * cw, PED_TOP + PED_ROWS * PED_ROW);
+          ctx.stroke();
+        }
+        levels.forEach((lv, g) => {
+          const span = PED_ROWS / Math.pow(2, g + 1);
+          lv.forEach((x, i) => {
+            const y = PED_TOP + i * span * PED_ROW;
+            ctx.fillStyle = x.side === 's' ? 'rgba(64,89,122,.05)' : 'rgba(154,90,107,.05)';
+            ctx.fillRect(tx0 + g * cw + 1, y + 1, cw - 2, span * PED_ROW - 2);
+            ctx.strokeStyle = '#ece7da';
+            ctx.beginPath();
+            ctx.moveTo(tx0 + g * cw, y);
+            ctx.lineTo(tx0 + (g + 1) * cw, y);
+            ctx.stroke();
+            ctx.font = '14px ' + SANS; ctx.fillStyle = INK;
+            const nm = (x.node && x.node.n) || '—';
+            ctx.fillText(clipText(ctx, nm, cw - 14), tx0 + g * cw + 7, y + span * PED_ROW / 2 + 5);
+          });
         });
       }
 
-      // 战绩（最近 6 场）
-      const races = (h.races || []).slice()
-        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-        .slice(0, 6);
+      // 战绩（全部）
       if(races.length){
         ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED;
-        ctx.fillText('战绩（最近 ' + races.length + ' 场）', 70, 1082);
-        ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
-        [['日期',70],['赛事',200],['着順',540],['人气',620],['骑手',700]]
-          .forEach(c => ctx.fillText(c[0], c[1], 1120));
-        ctx.strokeStyle = LINE; ctx.beginPath(); ctx.moveTo(70, 1134); ctx.lineTo(W - 70, 1134); ctx.stroke();
+        ctx.fillText('战绩（共 ' + races.length + ' 场）', 70, RACES_TOP);
+        const hy = RACES_TOP + 32;
+        ctx.font = '17px ' + SANS; ctx.fillStyle = MUTED;
+        [['日期',70],['赛事',190],['着順',520],['人气',600],['骑手',680],['距离',890],['タイム',980]]
+          .forEach(c2 => ctx.fillText(c2[0], c2[1], hy));
+        ctx.strokeStyle = LINE;
+        ctx.beginPath(); ctx.moveTo(70, hy + 10); ctx.lineTo(W - 70, hy + 10); ctx.stroke();
         races.forEach((r, i) => {
-          const ry = 1168 + i * 48;
-          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
+          const ry = hy + 44 + i * 34;
+          ctx.font = '17px ' + SANS; ctx.fillStyle = MUTED;
           ctx.fillText(String(r.date || ''), 70, ry);
           ctx.fillStyle = INK;
-          ctx.fillText(clipText(ctx, r.race || '', 310), 200, ry);
+          ctx.fillText(clipText(ctx, r.race || '', 300), 190, ry);
           const pos = String(r.pos || '').trim();
           if(pos){
-            const isMedal = /^[123]$/.test(pos);
-            ctx.fillStyle = isMedal ? ({'1':'#e5c264','2':'#ced3d5','3':'#d8a471'})[pos] : '#8b8b84';
-            ctx.fillRect(532, ry - 18, 36, 24);
-            ctx.fillStyle = isMedal ? INK : '#fff';
-            ctx.font = '17px ' + SANS; ctx.textAlign = 'center';
-            ctx.fillText(pos, 550, ry); ctx.textAlign = 'left';
+            const medal = /^[123]$/.test(pos);
+            ctx.fillStyle = medal ? ({'1':'#e5c264','2':'#ced3d5','3':'#d8a471'})[pos] : '#8b8b84';
+            ctx.fillRect(516, ry - 17, 34, 22);
+            ctx.fillStyle = medal ? INK : '#fff';
+            ctx.font = '16px ' + SANS; ctx.textAlign = 'center';
+            ctx.fillText(pos, 533, ry); ctx.textAlign = 'left';
           }
-          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
-          ctx.fillText(r.pop || '', 620, ry);
+          ctx.font = '17px ' + SANS; ctx.fillStyle = MUTED;
+          ctx.fillText(r.pop || '', 600, ry);
           ctx.fillStyle = INK;
-          ctx.fillText(clipText(ctx, r.jockey || '', 250), 700, ry);
-          ctx.strokeStyle = '#eee9dd'; ctx.beginPath(); ctx.moveTo(70, ry + 14); ctx.lineTo(W - 70, ry + 14); ctx.stroke();
+          ctx.fillText(clipText(ctx, r.jockey || '', 180), 680, ry);
+          ctx.fillStyle = MUTED;
+          ctx.fillText(r.dist || '', 890, ry);
+          ctx.fillText(r.time || '', 980, ry);
+          ctx.strokeStyle = '#f0ece1';
+          ctx.beginPath(); ctx.moveTo(70, ry + 12); ctx.lineTo(W - 70, ry + 12); ctx.stroke();
         });
       }
 
@@ -1285,7 +1323,6 @@
       const img = new Image();
       // 3 秒内照片没加载出来就先出无照片版本，避免点了没反应
       const timer = setTimeout(drawText, 8000);
-      img.crossOrigin = 'anonymous';
       img.onload = () => {
         clearTimeout(timer);
         ctx.save();
