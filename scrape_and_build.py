@@ -435,6 +435,64 @@ def scrape_horse(hid, ped_map, name=None, sex=None):
     return detail
 
 
+DIST_BANDS = [('短', 0, 1400), ('中', 1401, 1800), ('长', 1801, 2400), ('超长', 2401, 99999)]
+
+
+def _surface_of(dist):
+    d = str(dist or '')
+    if '障' in d:
+        return '障'
+    if 'ダ' in d:
+        return 'ダ'
+    if '芝' in d:
+        return '芝'
+    return '他'
+
+
+def _band_of(dist):
+    m = re.search(r'(\d{3,4})', str(dist or ''))
+    if not m:
+        return '?'
+    n = int(m.group(1))
+    for name, lo, hi in DIST_BANDS:
+        if lo <= n <= hi:
+            return name
+    return '?'
+
+
+def compute_stats(records):
+    """按种马统计场地/距离的出走与胜利（只统计有明确着順的比赛）"""
+    out = {}
+    for h in records:
+        sire = h.get('sire')
+        if not sire:
+            continue
+        s = out.setdefault(sire, {'total': {'runs': 0, 'wins': 0},
+                                  'surface': {}, 'distance': {}})
+        for r in (h.get('races') or []):
+            pos = str(r.get('pos') or '').strip()
+            if not pos.isdigit():
+                continue
+            win = pos == '1'
+            s['total']['runs'] += 1
+            s['total']['wins'] += 1 if win else 0
+            for key, name in (('surface', _surface_of(r.get('dist'))),
+                              ('distance', _band_of(r.get('dist')))):
+                d = s[key].setdefault(name, {'runs': 0, 'wins': 0})
+                d['runs'] += 1
+                d['wins'] += 1 if win else 0
+    return out
+
+
+def write_stats(records):
+    """生成 stats.js（店长页的产驹适性统计）"""
+    stats = compute_stats(records)
+    with open('stats.js', 'w', encoding='utf-8') as f:
+        f.write('// 本文件由 scrape_and_build.py 自动生成\nconst 产驹统计 = ' +
+                json.dumps(stats, ensure_ascii=False) + ';\n')
+    print('已写入 stats.js', flush=True)
+
+
 def bump_asset_version():
     """更新 index.html 里的资源版本号，避免浏览器缓存旧数据"""
     import datetime
@@ -1006,6 +1064,7 @@ def main():
         f.write(js)
     print(f'已写入 data.js（{os.path.getsize("data.js")/1024/1024:.2f} MB）', flush=True)
     update_changelog(len(all_records))
+    write_stats(all_records)
     bump_asset_version()
     tw = scrape_thisweek()
     if len(tw) >= MIN_THISWEEK:

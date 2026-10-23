@@ -457,6 +457,20 @@
   .wins-table th{text-align:left;background:var(--bg);padding:7px 10px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:1px;border-bottom:1px solid var(--line-strong)}
   .wins-table td{padding:7px 10px;border-top:1px solid var(--line)}
   .wins-table tr{transition:background var(--ease)}
+  /* 赛场适性统计 */
+  .stat-block{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
+  .stat-block h3{font-family:var(--serif);font-size:15px;letter-spacing:1px;color:var(--brand);margin-bottom:4px}
+  .stat-total{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .stat-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .stat-cols h4{font-size:12.5px;color:var(--muted);margin-bottom:10px;letter-spacing:1px}
+  .stat-row{display:grid;grid-template-columns:34px 82px 46px;gap:8px;align-items:center;font-size:12.5px;margin-bottom:10px}
+  .stat-k{font-weight:600;color:var(--brand)}
+  .stat-v{color:var(--muted)}
+  .stat-rate{text-align:right;color:var(--ink);font-weight:600}
+  .stat-bar{grid-column:1 / -1;height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:2px}
+  .stat-bar i{display:block;height:100%;background:var(--gold)}
+  .stat-note{font-size:11.5px;color:var(--muted);margin-top:4px}
+  @media (max-width:640px){.stat-cols{grid-template-columns:1fr}}
 
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important;scroll-behavior:auto!important}
@@ -626,6 +640,7 @@
 <script src="sire-info.js?v=2026102307"></script>
 <script src="news.js?v=2026102307"></script>
 <script src="videos.js?v=2026102307"></script>
+<script src="stats.js?v=2026102307"></script>
 <script>
   const data = 产驹数据;
   const PER_PAGE = 20;
@@ -1054,7 +1069,7 @@
   function detailExtraHtml(h){
     const ped = h.ped ? `<div class="ped-box"><h3>5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
     const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>人气</th><th>骑手</th><th>距离</th><th>体重</th><th>上がり</th><th>通過</th><th>着差</th><th>タイム</th></tr></thead><tbody>${h.races.map(r => `<tr><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${rankBadge(r.pos)}</td><td>${esc(r.pop||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td><td>${esc(r.weight||'')}</td><td>${esc(r.agari||'')}</td><td>${esc(r.pass||'')}</td><td>${esc(r.margin||'')}</td><td>${esc(r.time||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
-    return ped + races;
+    return ped + races + ((h.races && h.races.length) ? statsHtml(buildStats(h.races)) : '');
   }
   function renderDetailExtra(h){
     if(currentDetailKey !== String(h.id || '')) return;
@@ -1198,6 +1213,53 @@
     const s = String(o == null ? '' : o).trim();
     if(!s) return '';
     return `<span class="rank-badge ${rankCls(s) || 'rank-other'}">${esc(s)}</span>`;
+  }
+  // ---------- 赛场适性统计 ----------
+  function surfaceOf(d){
+    d = String(d || '');
+    if(d.indexOf('障') >= 0) return '障';
+    if(d.indexOf('ダ') >= 0) return 'ダ';
+    if(d.indexOf('芝') >= 0) return '芝';
+    return '他';
+  }
+  function bandOf(d){
+    const m = String(d || '').match(/(\d{3,4})/);
+    if(!m) return '?';
+    const n = +m[1];
+    return n <= 1400 ? '短' : (n <= 1800 ? '中' : (n <= 2400 ? '长' : '超长'));
+  }
+  function buildStats(races){
+    const out = {total:{runs:0, wins:0}, surface:{}, distance:{}};
+    (races || []).forEach(r => {
+      const pos = String(r.pos || '').trim();
+      if(!/^\d+$/.test(pos)) return;
+      const win = pos === '1';
+      out.total.runs++; if(win) out.total.wins++;
+      [['surface', surfaceOf(r.dist)], ['distance', bandOf(r.dist)]].forEach(([key, k]) => {
+        const o = out[key][k] || (out[key][k] = {runs:0, wins:0});
+        o.runs++; if(win) o.wins++;
+      });
+    });
+    return out;
+  }
+  function statRowsHtml(obj, order){
+    return order.filter(k => obj && obj[k]).map(k => {
+      const s = obj[k], rate = s.runs ? s.wins / s.runs * 100 : 0;
+      return `<div class="stat-row"><span class="stat-k">${k}</span><span class="stat-v">${s.runs}戦${s.wins}勝</span><span class="stat-rate">${rate.toFixed(0)}%</span><div class="stat-bar"><i style="width:${rate.toFixed(1)}%"></i></div></div>`;
+    }).join('');
+  }
+  function statsHtml(st){
+    if(!st || !st.total || !st.total.runs) return '';
+    const t = st.total, rate = t.runs ? t.wins / t.runs * 100 : 0;
+    return `<div class="stat-block">
+      <h3>赛场适性</h3>
+      <div class="stat-total">通算 ${t.runs}戦${t.wins}勝 · 胜率 ${rate.toFixed(1)}%</div>
+      <div class="stat-cols">
+        <div><h4>场地</h4>${statRowsHtml(st.surface, ['芝','ダ','障','他'])}</div>
+        <div><h4>距离</h4>${statRowsHtml(st.distance, ['短','中','长','超长'])}
+          <div class="stat-note">短～1400m · 中1401-1800 · 长1801-2400 · 超长2401～</div></div>
+      </div>
+    </div>`;
   }
   function renderThisweek(){
     const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
@@ -1379,6 +1441,7 @@
             <thead><tr><th>马名</th><th>性别</th><th>毛色</th><th>生日</th><th>生年</th><th>成绩</th><th>状态</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="7">暂无产驹</td></tr>'}</tbody>
           </table>
+          ${(typeof 产驹统计 !== 'undefined' && 产驹统计[s.name]) ? statsHtml(产驹统计[s.name]) : ''}
           ${kids.length > shown.length ? `<button class="btn-plain" id="sireAllBtn" style="margin-top:14px">在产驹列表中查看全部 ${kids.length} 匹 →</button>` : ''}
         </div>
       </div>`;
