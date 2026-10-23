@@ -1312,6 +1312,12 @@
         });
       }
 
+      if(!photoDrawn){
+        ctx.font = '18px ' + SANS; ctx.fillStyle = '#b9b2a2'; ctx.textAlign = 'center';
+        ctx.fillText('No Photo', px + pw / 2, py + ph / 2);
+        ctx.textAlign = 'left';
+      }
+
       ctx.font = '22px ' + SANS; ctx.fillStyle = GOLD; ctx.textAlign = 'left';
       ctx.fillText('epimome.cn', 70, H - 62);
       ctx.fillStyle = MUTED; ctx.textAlign = 'right'; ctx.font = '17px ' + SANS;
@@ -1319,20 +1325,25 @@
       finish();
     };
 
-    if(h.photo){
+    let photoDrawn = false;
+    const drawPhoto = (img) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(px, py, pw, ph);
+      ctx.clip();
+      drawCover(ctx, img, px + 1, py + 1, pw - 2, ph - 2);
+      ctx.restore();
+      photoDrawn = true;
+    };
+    // 优先复用详情页已经加载好的照片（最稳，不会再等网络）
+    const existing = document.querySelector('.detail-photo img');
+    if(existing && existing.complete && existing.naturalWidth > 0){
+      drawPhoto(existing);
+      drawText();
+    } else if(h.photo){
       const img = new Image();
-      // 3 秒内照片没加载出来就先出无照片版本，避免点了没反应
       const timer = setTimeout(drawText, 8000);
-      img.onload = () => {
-        clearTimeout(timer);
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(px, py, pw, ph);
-        ctx.clip();
-        drawCover(ctx, img, px + 1, py + 1, pw - 2, ph - 2);
-        ctx.restore();
-        drawText();
-      };
+      img.onload = () => { clearTimeout(timer); drawPhoto(img); drawText(); };
       img.onerror = () => { clearTimeout(timer); drawText(); };
       img.src = h.photo;
     } else {
