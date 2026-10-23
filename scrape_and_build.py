@@ -845,9 +845,9 @@ def make_week_image(runners):
     d.text(((W - tw(kicker, f_kick)) / 2, 66), kicker, font=f_kick, fill=MUTED)
     t1, t2 = '虾', '铺开张中'
     w1, w2 = tw(t1, f_title), tw(t2, f_title)
-    x0 = (W - (w1 + 18 + w2)) / 2
+    x0 = (W - (w1 + 6 + w2)) / 2
     d.text((x0, 100), t1, font=f_title, fill=GOLD)
-    d.text((x0 + w1 + 18, 100), t2, font=f_title, fill=GREEN)
+    d.text((x0 + w1 + 6, 100), t2, font=f_title, fill=GREEN)
     sub = f'本周出赛 · {mon.month}月{mon.day}日 – {sun.month}月{sun.day}日'
     d.text(((W - tw(sub, f_sub)) / 2, 170), sub, font=f_sub, fill=MUTED)
     d.rectangle([W // 2 - 30, 210, W // 2 + 30, 213], fill=GOLD)

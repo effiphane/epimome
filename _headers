@@ -1,0 +1,9 @@
+# 数据文件不做长缓存，避免浏览器拿旧数据
+/thisweek.js
+  Cache-Control: no-cache, must-revalidate
+
+/data.js
+  Cache-Control: no-cache, must-revalidate
+
+/updates.js
+  Cache-Control: no-cache, must-revalidate
