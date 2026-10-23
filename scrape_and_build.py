@@ -429,6 +429,24 @@ def scrape_horse(hid, ped_map, name=None, sex=None):
     return detail
 
 
+def bump_asset_version():
+    """更新 index.html 里的资源版本号，避免浏览器缓存旧数据"""
+    import datetime
+    v = datetime.datetime.now().strftime('%Y%m%d%H')
+    try:
+        if not os.path.exists('index.html'):
+            return
+        with open('index.html', encoding='utf-8') as f:
+            c = f.read()
+        c2 = re.sub(r'\?v=[0-9A-Za-z]+', f'?v={v}', c)
+        if c2 != c:
+            with open('index.html', 'w', encoding='utf-8') as f:
+                f.write(c2)
+            print(f'资源版本号 → {v}', flush=True)
+    except Exception:
+        pass
+
+
 def add_update_entry(text):
     """往 updates.js 的「数据更新」列表加一条记录（同一天可多条，同类不重复）"""
     import datetime
@@ -982,6 +1000,7 @@ def main():
         f.write(js)
     print(f'已写入 data.js（{os.path.getsize("data.js")/1024/1024:.2f} MB）', flush=True)
     update_changelog(len(all_records))
+    bump_asset_version()
     tw = scrape_thisweek()
     if len(tw) >= MIN_THISWEEK:
         write_thisweek(tw)
