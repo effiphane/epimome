@@ -1077,6 +1077,13 @@
         alert('生成失败：' + (e && e.message ? e.message : e));
       }
     });
+    // 预览模式：URL 加 ?card=1 时直接渲染分享卡（便于检查排版）
+    if(new URLSearchParams(location.search).has('card')){
+      const t = setInterval(() => {
+        if(h.ped || horseDetailCache[h.id]){ clearInterval(t); makeShareCard(h, true); }
+      }, 200);
+      setTimeout(() => clearInterval(t), 10000);
+    }
   }
 
   // ---------- 分享卡生成 ----------
@@ -1086,13 +1093,19 @@
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
   function makeShareCard(h, preview, done){
-    const W = 1080, H = 1350;
+    const W = 1080, H = 1620;
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
     const PAPER = '#f8f5ee', INK = '#22241f', GREEN = '#1f3b2c', GOLD = '#a8873f', MUTED = '#7e7a6f', LINE = '#cfc7b3';
     const SANS = '"PingFang SC","Microsoft YaHei",sans-serif';
     const SERIF = '"Songti SC","Noto Serif SC","SimSun",serif';
+    const clipText = (context, text, maxW) => {
+      text = String(text || '');
+      if(context.measureText(text).width <= maxW) return text;
+      while(text && context.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+      return text + '…';
+    };
 
     ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
     for(let i = 0; i < 6000; i++){
@@ -1202,35 +1215,62 @@
         y += 38;
       });
 
-      y = Math.max(y + 16, 760);
-      ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText('成绩', 70, y);
+      // 成绩
+      ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText('成绩', 70, 780);
       ctx.font = '46px ' + SERIF; ctx.fillStyle = GREEN;
-      ctx.fillText(h.rec || '未出走', 140, y + 4);
+      ctx.fillText(h.rec || '未出走', 140, 784);
 
-      const st = buildStats(h.races || []);
-      if(st.total.runs){
-        let sy = y + 70;
-        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED;
-        ctx.fillText('通算 ' + st.total.runs + '戦' + st.total.wins + '勝 · 胜率 ' +
-                     (st.total.wins / st.total.runs * 100).toFixed(1) + '%', 70, sy);
-        sy += 46;
-        const cols = [
-          { title: '场地', data: st.surface, order: ['芝','ダ','障','他'], x: 70 },
-          { title: '距离', data: st.distance, order: ['短','英','中','长'], x: 560 }
+      // 血统（3代）
+      const ped = h.ped;
+      if(ped){
+        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText('血统（3代）', 70, 852);
+        const gen = [
+          ['父', ped.s && ped.s.n, '母', ped.d && ped.d.n],
+          ['父父', ped.s && ped.s.s && ped.s.s.n, '母父', ped.d && ped.d.s && ped.d.s.n],
+          ['父母', ped.s && ped.s.d && ped.s.d.n, '母母', ped.d && ped.d.d && ped.d.d.n]
         ];
-        cols.forEach(col => {
-          ctx.font = '20px ' + SANS; ctx.fillStyle = MUTED; ctx.fillText(col.title, col.x, sy);
-          let ry = sy + 34;
-          col.order.forEach(k => {
-            const s = col.data[k]; if(!s) return;
-            const rate = s.runs ? s.wins / s.runs * 100 : 0;
-            ctx.font = '19px ' + SANS; ctx.fillStyle = GREEN; ctx.fillText(k, col.x, ry);
-            ctx.fillStyle = MUTED; ctx.fillText(s.runs + '戦' + s.wins + '勝', col.x + 40, ry);
-            ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(rate.toFixed(0) + '%', col.x + 420, ry); ctx.textAlign = 'left';
-            ctx.fillStyle = '#e2ddcf'; ctx.fillRect(col.x + 40, ry + 10, 330, 4);
-            ctx.fillStyle = GOLD; ctx.fillRect(col.x + 40, ry + 10, 330 * rate / 100, 4);
-            ry += 38;
-          });
+        gen.forEach((g, i) => {
+          const ry = 896 + i * 38;
+          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
+          ctx.fillText(g[0], 70, ry);
+          ctx.fillText(g[2], 560, ry);
+          ctx.font = '20px ' + SANS; ctx.fillStyle = INK;
+          ctx.fillText(clipText(ctx, g[1] || '—', 330), 130, ry);
+          ctx.fillText(clipText(ctx, g[3] || '—', 330), 620, ry);
+        });
+      }
+
+      // 战绩（最近 6 场）
+      const races = (h.races || []).slice()
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+        .slice(0, 6);
+      if(races.length){
+        ctx.font = '22px ' + SANS; ctx.fillStyle = MUTED;
+        ctx.fillText('战绩（最近 ' + races.length + ' 场）', 70, 1082);
+        ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
+        [['日期',70],['赛事',200],['着順',540],['人气',620],['骑手',700]]
+          .forEach(c => ctx.fillText(c[0], c[1], 1120));
+        ctx.strokeStyle = LINE; ctx.beginPath(); ctx.moveTo(70, 1134); ctx.lineTo(W - 70, 1134); ctx.stroke();
+        races.forEach((r, i) => {
+          const ry = 1168 + i * 48;
+          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
+          ctx.fillText(String(r.date || ''), 70, ry);
+          ctx.fillStyle = INK;
+          ctx.fillText(clipText(ctx, r.race || '', 310), 200, ry);
+          const pos = String(r.pos || '').trim();
+          if(pos){
+            const isMedal = /^[123]$/.test(pos);
+            ctx.fillStyle = isMedal ? ({'1':'#e5c264','2':'#ced3d5','3':'#d8a471'})[pos] : '#8b8b84';
+            ctx.fillRect(532, ry - 18, 36, 24);
+            ctx.fillStyle = isMedal ? INK : '#fff';
+            ctx.font = '17px ' + SANS; ctx.textAlign = 'center';
+            ctx.fillText(pos, 550, ry); ctx.textAlign = 'left';
+          }
+          ctx.font = '18px ' + SANS; ctx.fillStyle = MUTED;
+          ctx.fillText(r.pop || '', 620, ry);
+          ctx.fillStyle = INK;
+          ctx.fillText(clipText(ctx, r.jockey || '', 250), 700, ry);
+          ctx.strokeStyle = '#eee9dd'; ctx.beginPath(); ctx.moveTo(70, ry + 14); ctx.lineTo(W - 70, ry + 14); ctx.stroke();
         });
       }
 
@@ -1244,7 +1284,7 @@
     if(h.photo){
       const img = new Image();
       // 3 秒内照片没加载出来就先出无照片版本，避免点了没反应
-      const timer = setTimeout(drawText, 3000);
+      const timer = setTimeout(drawText, 8000);
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         clearTimeout(timer);
