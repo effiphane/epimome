@@ -303,7 +303,10 @@ def scrape_detail(session, hid):
     if title:
         m = re.search(r'\(([^)]+)\)', title.text.strip())
         if m:
-            d['en'] = m.group(1).strip()
+            en = m.group(1).strip()
+            # 只接受含拉丁字母的英字名；未登录马/当岁马的括号里是母名+年份的片假名
+            if re.search(r'[A-Za-z]', en):
+                d['en'] = en
 
     d['color'] = extract_color(soup)
 
