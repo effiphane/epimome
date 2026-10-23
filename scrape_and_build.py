@@ -197,6 +197,11 @@ def scrape_results(hid):
     i_jockey = col('騎手')
     i_dist = col('距離')
     i_pop = col('人気')
+    i_time = col('タイム')
+    i_margin = col('着差')
+    i_pass = col('通過')
+    i_agari = col('上がり')
+    i_weight = col('馬体重')
 
     races = []
     for tr in table.find_all('tr')[1:]:
@@ -210,7 +215,8 @@ def scrape_results(hid):
         races.append({
             'date': get(i_date), 'venue': get(i_venue), 'race': get(i_race),
             'pos': get(i_pos), 'jockey': get(i_jockey), 'dist': get(i_dist),
-            'pop': get(i_pop),
+            'pop': get(i_pop), 'time': get(i_time), 'margin': get(i_margin),
+            'pass': get(i_pass), 'agari': get(i_agari), 'weight': get(i_weight),
         })
     return races
 
