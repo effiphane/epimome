@@ -814,7 +814,7 @@ def make_week_image(runners):
                    if in_week(r) and (r.get('region') or '中央') == '中央'],
                   key=lambda r: (md(r.get('date')) or (99, 99), r.get('time') or '99:99'))
 
-    W = 1200
+    W = 1300
     pad = 56
     row_h = 46
     header_h = 250
@@ -852,8 +852,8 @@ def make_week_image(runners):
     d.text(((W - tw(sub, f_sub)) / 2, 170), sub, font=f_sub, fill=MUTED)
     d.rectangle([W // 2 - 30, 210, W // 2 + 30, 213], fill=GOLD)
 
-    cols = [('日期', pad), ('时间', 212), ('闸位', 278), ('赛事', 336),
-            ('马名', 622), ('骑手', 826), ('人气', 956), ('着順', 1026)]
+    cols = [('日期', pad), ('时间', 212), ('闸位', 278), ('级别', 342),
+            ('赛事', 412), ('马名', 722), ('骑手', 918), ('人气', 1038), ('着順', 1110)]
     y = header_h - 34
     d.line([pad, y + 30, W - pad, y + 30], fill=(207, 199, 179), width=2)
     for label, x in cols:
@@ -877,16 +877,19 @@ def make_week_image(runners):
             last_date = date
         d.text((212, y + 10), clip(r.get('time'), 56, f_cell), font=f_cell, fill=INK)
         d.text((278, y + 10), clip(r.get('num'), 46, f_cell), font=f_cell, fill=MUTED)
-        d.text((336, y + 10), clip(r.get('race'), 278, f_cell), font=f_cell, fill=INK)
-        d.text((622, y + 10), clip(r.get('name'), 196, f_cell), font=f_cell, fill=GREEN)
-        d.text((826, y + 10), clip(r.get('jockey'), 122, f_cell), font=f_cell, fill=INK)
-        d.text((956, y + 10), clip(r.get('fav'), 58, f_cell), font=f_cell, fill=MUTED)
+        cls = r.get('cls') or ''
+        d.text((342, y + 10), clip(cls, 62, f_small), font=f_small,
+               fill=GOLD if cls.startswith('G') else MUTED)
+        d.text((412, y + 10), clip(r.get('race'), 300, f_cell), font=f_cell, fill=INK)
+        d.text((722, y + 10), clip(r.get('name'), 188, f_cell), font=f_cell, fill=GREEN)
+        d.text((918, y + 10), clip(r.get('jockey'), 112, f_cell), font=f_cell, fill=INK)
+        d.text((1038, y + 10), clip(r.get('fav'), 66, f_cell), font=f_cell, fill=MUTED)
         order = str(r.get('order') or '').strip()
         if order:
             bg = RANK_BG.get(int(order)) if order.isdigit() and 1 <= int(order) <= 3 else GRAY_BG
             fg = INK if order in ('1', '2', '3') else (255, 255, 255)
             bw = max(34, tw(order, f_small) + 18)
-            bx = 1026
+            bx = 1110
             d.rounded_rectangle([bx, y + 8, bx + bw, y + 36], radius=3, fill=bg)
             d.text((bx + (bw - tw(order, f_small)) / 2, y + 10), order, font=f_small, fill=fg)
         y += row_h
