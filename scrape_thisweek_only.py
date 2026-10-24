@@ -6,6 +6,7 @@ import scrape_and_build as sb
 runners = sb.scrape_thisweek()
 if len(runners) < sb.MIN_THISWEEK:
     sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')
+runners = sb.merge_thisweek(runners, sb.load_thisweek())
 sb.write_thisweek(runners)
 sb.bump_asset_version()
 try:

@@ -815,6 +815,40 @@ def scrape_thisweek():
     return filter_false_runners(runners)
 
 
+def load_thisweek():
+    """读取现有 thisweek.js"""
+    try:
+        with open('thisweek.js', encoding='utf-8') as f:
+            c = f.read()
+        m = re.search(r'=\s*(\[.*?\])\s*;', c, re.S)
+        return json.loads(m.group(1)) if m else []
+    except Exception:
+        return []
+
+
+def _tw_key(r):
+    m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date', ''))
+    md = f'{int(m.group(1)):02d}{int(m.group(2)):02d}' if m else ''
+    return (md, r.get('race', ''), r.get('name', ''))
+
+
+def merge_thisweek(new, old):
+    """合并新旧出赛数据：保留旧数据里已经跑完的比赛，避免页面刷新后丢失结果"""
+    m = {_tw_key(r): r for r in new}
+    for r in old:
+        k = _tw_key(r)
+        if k not in m:
+            m[k] = r
+
+    def dk(r):
+        m2 = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date', ''))
+        return (int(m2.group(1)), int(m2.group(2))) if m2 else (99, 99)
+
+    out = list(m.values())
+    out.sort(key=lambda r: (dk(r), r.get('time') or '99:99'))
+    return out
+
+
 def write_thisweek(runners):
     js = '// 本文件由 scrape_and_build.py 自动生成\nconst 本周出马 = ' + \
         json.dumps(runners, ensure_ascii=False) + ';\n'
@@ -1068,6 +1102,7 @@ def main():
     bump_asset_version()
     tw = scrape_thisweek()
     if len(tw) >= MIN_THISWEEK:
+        tw = merge_thisweek(tw, load_thisweek())
         write_thisweek(tw)
         try:
             make_week_image(tw)
