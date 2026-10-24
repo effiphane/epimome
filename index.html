@@ -1082,13 +1082,6 @@
         settle(false, '生成失败：' + (e && e.message ? e.message : e));
       }
     });
-    // 预览模式：URL 加 ?card=1 时直接渲染分享卡（便于检查排版）
-    if(new URLSearchParams(location.search).has('card')){
-      const t = setInterval(() => {
-        if(h.ped || horseDetailCache[h.id]){ clearInterval(t); makeShareCard(h, true); }
-      }, 200);
-      setTimeout(() => clearInterval(t), 10000);
-    }
   }
 
   // ---------- 分享卡生成 ----------
@@ -1096,6 +1089,34 @@
     const s = Math.max(w / img.width, h / img.height);
     const dw = img.width * s, dh = img.height * s;
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  function showCardOverlay(url, name){
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,18,14,.85);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px';
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'max-width:100%;max-height:74vh;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.45);background:#fff';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;justify-content:center';
+    const dl = document.createElement('a');
+    dl.href = url;
+    dl.download = (name || 'horse') + '_epimome.png';
+    dl.textContent = '下载图片';
+    dl.style.cssText = 'background:#1f3b2c;color:#fff;padding:9px 18px;border-radius:2px;font-size:14px;font-weight:600;text-decoration:none';
+    const op = document.createElement('a');
+    op.href = url; op.target = '_blank'; op.rel = 'noopener';
+    op.textContent = '在新标签打开';
+    op.style.cssText = 'border:1px solid rgba(255,255,255,.45);color:#fff;padding:9px 18px;border-radius:2px;font-size:14px;font-weight:600;text-decoration:none';
+    const cl = document.createElement('button');
+    cl.textContent = '关闭';
+    cl.style.cssText = 'border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;padding:9px 18px;border-radius:2px;font-size:14px;font-weight:600;cursor:pointer';
+    cl.onclick = () => { ov.remove(); };
+    bar.append(dl, op, cl);
+    const hint = document.createElement('div');
+    hint.textContent = '下载没反应的话：右键 / 长按图片，选择「图片另存为」';
+    hint.style.cssText = 'color:#fff;font-size:13px;opacity:.8;text-align:center';
+    ov.append(img, bar, hint);
+    document.body.appendChild(ov);
   }
   function makeShareCard(h, preview, done){
     const W = 1080;
@@ -1165,37 +1186,17 @@
           im.src = c.toDataURL();
           return;
         }
-        // 手机/微信里下载经常无效，改为弹出图片让用户长按保存
-        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        if(isMobile){
-          const url = c.toDataURL('image/png');
-          const ov = document.createElement('div');
-          ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,18,14,.82);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px';
-          ov.innerHTML = '<img src="' + url + '" style="max-width:100%;max-height:78vh;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.4)"><div style="color:#fff;font-size:14px;opacity:.85">长按图片保存 · 点空白处关闭</div>';
-          ov.addEventListener('click', () => ov.remove());
-          document.body.appendChild(ov);
+        const showBlob = (url) => {
+          showCardOverlay(url, h.name);
           if(done) done();
-          return;
-        }
+        };
         if(!c.toBlob){
-          // 老浏览器（部分微信/内置浏览器）没有 toBlob，直接打开图片
-          window.open(c.toDataURL('image/png'), '_blank');
-          if(done) done();
+          showBlob(c.toDataURL('image/png'));
           return;
         }
         c.toBlob(blob => {
-          if(!blob){
-            try{ window.open(c.toDataURL('image/png'), '_blank'); }
-            catch(err){ alert('导出失败，请换用电脑浏览器再试'); }
-            if(done) done();
-            return;
-          }
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = (h.name || 'horse') + '_epimome.png';
-          document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(a.href), 8000);
-          if(done) done();
+          if(!blob){ alert('导出失败，请换用电脑浏览器再试'); if(done) done(); return; }
+          showBlob(URL.createObjectURL(blob));
         }, 'image/png');
       }catch(e){
         // file:// 本地打开时图片会污染画布，去掉照片重新生成
