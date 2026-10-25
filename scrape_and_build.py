@@ -849,6 +849,48 @@ def merge_thisweek(new, old):
     return out
 
 
+def fill_results(runners):
+    """对今天已开赛但仍显示「出馬表」的中央赛事，直接查马的战绩页补着顺/人气"""
+    import datetime
+    BJ = datetime.timezone(datetime.timedelta(hours=8))
+    now = datetime.datetime.now(BJ)
+    today_md = (now.month, now.day)
+    changed = 0
+    for r in runners:
+        if r.get('region') != '中央' or r.get('status') not in ('出馬表', ''):
+            continue
+        m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date') or '')
+        if not m or (int(m.group(1)), int(m.group(2))) != today_md:
+            continue
+        t = r.get('time') or ''
+        if not re.fullmatch(r'\d{2}:\d{2}', t):
+            continue
+        hh, mm = int(t[:2]), int(t[3:])
+        if now.hour * 60 + now.minute < hh * 60 + mm + 10:
+            continue  # 还没开赛
+        hid = r.get('id')
+        if not hid:
+            continue
+        try:
+            races = scrape_results(hid)
+        except Exception:
+            continue
+        for rec in races:
+            m2 = re.search(r'/(\d{1,2})/(\d{1,2})', rec.get('date') or '')
+            if m2 and (int(m2.group(1)), int(m2.group(2))) == today_md:
+                if rec.get('pos'):
+                    r['order'] = rec['pos']
+                    r['status'] = '結果確定'
+                if rec.get('pop'):
+                    r['fav'] = rec['pop']
+                changed += 1
+                break
+        time.sleep(0.25)
+    if changed:
+        print(f'已补全 {changed} 条赛果', flush=True)
+    return runners
+
+
 def write_thisweek(runners):
     js = '// 本文件由 scrape_and_build.py 自动生成\nconst 本周出马 = ' + \
         json.dumps(runners, ensure_ascii=False) + ';\n'
@@ -1115,6 +1157,7 @@ def main():
     tw = scrape_thisweek()
     if len(tw) >= MIN_THISWEEK:
         tw = merge_thisweek(tw, load_thisweek())
+        tw = fill_results(tw)
         write_thisweek(tw)
         try:
             make_week_image(tw)
