@@ -799,6 +799,7 @@ def scrape_thisweek():
                         date = (date_from_race_id(race_id) if region == '地方' else None) or day
                         runners.append({
                             'date': date, 'time': start_time,
+                            'rid': race_id,
                             'race': f'{race_num} {race_name}'.strip(),
                             'cls': cls,
                             'status': race_status, 'name': name, 'id': hid,
@@ -849,6 +850,59 @@ def merge_thisweek(new, old):
     return out
 
 
+_race_result_cache = {}
+
+
+def race_results_map(race_id):
+    """从赛事结果页解析 {horse_id: (着順, 人気)}（实时更新，比马匹战绩页可靠）"""
+    if not race_id:
+        return {}
+    if race_id in _race_result_cache:
+        return _race_result_cache[race_id]
+    out = {}
+    try:
+        r = requests.get(f'https://race.netkeiba.com/race/result.html?race_id={race_id}',
+                         headers=HEADERS, timeout=30)
+        r.encoding = 'utf-8'
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            table = None
+            for t in soup.find_all('table'):
+                if '着順' in t.get_text():
+                    table = t
+                    break
+            if table:
+                head_tr = table.find('tr')
+                heads = []
+                if head_tr:
+                    heads = [c.get_text(strip=True) for c in head_tr.find_all(['th', 'td'])]
+
+                def idx(*names):
+                    for i, h in enumerate(heads):
+                        if any(n in h for n in names):
+                            return i
+                    return None
+
+                i_pos, i_pop = idx('着順'), idx('人気')
+                if i_pos is None:
+                    i_pos = 0  # 兜底：结果表第一列通常是着順
+                for tr in table.find_all('tr'):
+                    a = tr.find('a', href=re.compile(r'/horse/(\d+)/'))
+                    if not a:
+                        continue
+                    hid = re.search(r'/horse/(\d+)/', a['href']).group(1)
+                    cells = [c.get_text(strip=True) for c in tr.find_all('td')]
+
+                    def g(i):
+                        return cells[i] if i is not None and i < len(cells) else ''
+
+                    out[hid] = (g(i_pos), g(i_pop))
+    except Exception:
+        pass
+    _race_result_cache[race_id] = out
+    return out
+
+
 def fill_results(runners):
     """对今天已开赛但仍显示「出馬表」的中央赛事，直接查马的战绩页补着顺/人气"""
     import datetime
@@ -872,6 +926,21 @@ def fill_results(runners):
         hid = r.get('id')
         if not hid:
             continue
+        # 优先用赛事结果页（实时）
+        rid = r.get('rid')
+        if rid:
+            res = race_results_map(rid)
+            hit = res.get(str(hid))
+            dbg.append(f'{r.get("name")} {hid} rid={rid} 场次结果={len(res)} 命中={bool(hit)}')
+            if hit:
+                pos, pop = hit
+                if pos:
+                    r['order'] = pos
+                    r['status'] = '結果確定'
+                if pop:
+                    r['fav'] = pop
+                changed += 1
+                continue
         try:
             races = scrape_results(hid)
         except Exception as e:
