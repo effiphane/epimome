@@ -1025,9 +1025,21 @@ def make_week_image(runners):
     os.makedirs(WEEK_IMG_DIR, exist_ok=True)
     latest = os.path.join(WEEK_IMG_DIR, 'latest.png')
     week_file = os.path.join(WEEK_IMG_DIR, f'{mon.isoformat()}.png')
+    daily_file = os.path.join(WEEK_IMG_DIR, f'{now.date().isoformat()}.png')
     img.save(latest, optimize=True)
     img.save(week_file, optimize=True)
-    print(f'已生成出赛表图片 {week_file}（{len(rows)} 条）', flush=True)
+    img.save(daily_file, optimize=True)  # 每天一张快照，不会被后续更新覆盖
+    # 清理 60 天前的日图，避免仓库无限变大
+    for p in glob.glob(os.path.join(WEEK_IMG_DIR, '*.png')):
+        name = os.path.basename(p)
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}\.png', name):
+            try:
+                d = datetime.date.fromisoformat(name[:-4])
+                if (now.date() - d).days > 60:
+                    os.remove(p)
+            except Exception:
+                pass
+    print(f'已生成出赛表图片 {daily_file}（{len(rows)} 条）', flush=True)
 
 
 def main():
