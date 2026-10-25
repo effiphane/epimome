@@ -856,6 +856,7 @@ def fill_results(runners):
     now = datetime.datetime.now(BJ)
     today_md = (now.month, now.day)
     changed = 0
+    dbg = []
     for r in runners:
         if r.get('region') != '中央' or r.get('status') not in ('出馬表', ''):
             continue
@@ -873,8 +874,10 @@ def fill_results(runners):
             continue
         try:
             races = scrape_results(hid)
-        except Exception:
+        except Exception as e:
+            dbg.append(f'{r.get("name")} {hid} 查询异常 {e}')
             continue
+        dbg.append(f'{r.get("name")} {hid} time={t} 记录数={len(races)} 最近={[x.get("date") for x in races[:3]]}')
         for rec in races:
             m2 = re.search(r'/(\d{1,2})/(\d{1,2})', rec.get('date') or '')
             if m2 and (int(m2.group(1)), int(m2.group(2))) == today_md:
@@ -888,6 +891,12 @@ def fill_results(runners):
         time.sleep(0.25)
     if changed:
         print(f'已补全 {changed} 条赛果', flush=True)
+    try:
+        with open('fill_debug.txt', 'w', encoding='utf-8') as f:
+            f.write(f'now={now.isoformat()} today={today_md} changed={changed}\n')
+            f.write('\n'.join(dbg))
+    except Exception:
+        pass
     return runners
 
 
