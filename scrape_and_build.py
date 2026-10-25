@@ -903,14 +903,62 @@ def race_results_map(race_id):
     return out
 
 
+_today_race_list_cache = {}
+
+
+def today_race_list():
+    """当天赛事列表：[(race_id, 链接文字, 上下文文本)]"""
+    import datetime
+    if 'list' in _today_race_list_cache:
+        return _today_race_list_cache['list']
+    jst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    ds = jst.strftime('%Y%m%d')
+    out = []
+    try:
+        r = requests.get(f'https://race.netkeiba.com/top/race_list.html?kaisai_date={ds}',
+                         headers=HEADERS, timeout=30)
+        r.encoding = 'utf-8'
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            for a in soup.find_all('a', href=True):
+                m = re.search(r'race_id=(\d{12})', a['href'])
+                if not m:
+                    continue
+                text = a.get_text(strip=True)
+                parent = a.find_parent(['li', 'tr', 'div', 'dl'])
+                ptext = parent.get_text(' ', strip=True)[:120] if parent else text
+                out.append((m.group(1), text, ptext))
+    except Exception:
+        pass
+    _today_race_list_cache['list'] = out
+    return out
+
+
+def match_race_id(race_str, lst):
+    """按「场地+场次」或赛事名，从当天列表里找 race_id"""
+    m = re.match(r'(.+?)(\d+)R\s*(.*)', race_str or '')
+    venue = m.group(1) if m else ''
+    rn = m.group(2) if m else ''
+    name = (m.group(3) if m else '')[:6]
+    for rid, text, ptext in lst:
+        if venue and venue in ptext and (rn + 'R') in ptext:
+            return rid
+    for rid, text, ptext in lst:
+        if name and name in ptext:
+            return rid
+    return ''
+
+
 def fill_results(runners):
-    """对今天已开赛但仍显示「出馬表」的中央赛事，直接查马的战绩页补着顺/人气"""
+    """对今天已开赛但仍显示「出馬表」的中央赛事，从赛事结果页/马匹战绩页补着顺、人气"""
     import datetime
     BJ = datetime.timezone(datetime.timedelta(hours=8))
     now = datetime.datetime.now(BJ)
     today_md = (now.month, now.day)
     changed = 0
     dbg = []
+    rl = today_race_list()
+    dbg.append(f'赛事列表条数={len(rl)} 样例={[(x[0], x[1], x[2][:24]) for x in rl[:3]]}')
     for r in runners:
         if r.get('region') != '中央' or r.get('status') not in ('出馬表', ''):
             continue
@@ -926,8 +974,12 @@ def fill_results(runners):
         hid = r.get('id')
         if not hid:
             continue
-        # 优先用赛事结果页（实时）
+        # 优先用赛事结果页（实时）；没有 rid 就从当天赛事列表反查
         rid = r.get('rid')
+        if not rid:
+            rid = match_race_id(r.get('race', ''), rl)
+            if rid:
+                r['rid'] = rid
         if rid:
             res = race_results_map(rid)
             hit = res.get(str(hid))
