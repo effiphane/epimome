@@ -887,10 +887,10 @@ def race_results_map(race_id):
                 if i_pos is None:
                     i_pos = 0  # 兜底：结果表第一列通常是着順
                 for tr in table.find_all('tr'):
-                    a = tr.find('a', href=re.compile(r'/horse/(\d+)/'))
+                    a = tr.find('a', href=re.compile(r'/horse/(\d+)'))
                     if not a:
                         continue
-                    hid = re.search(r'/horse/(\d+)/', a['href']).group(1)
+                    hid = re.search(r'/horse/(\d+)', a['href']).group(1)
                     cells = [c.get_text(strip=True) for c in tr.find_all('td')]
 
                     def g(i):
@@ -965,20 +965,52 @@ def guess_race_ids(race_str, year):
     return [f'{year}{code}{k:02d}{n:02d}{rn:02d}' for k, n in MEET_CANDIDATES]
 
 
+_race_list_cache = {}
+
+
+def race_list_for_date(ds):
+    """当天赛事列表：[(race_id, 场次, 'HH:MM' JST)]"""
+    if ds in _race_list_cache:
+        return _race_list_cache[ds]
+    out = []
+    try:
+        r = requests.get(f'https://race.netkeiba.com/top/race_list_sub.html?kaisai_date={ds}',
+                         headers=HEADERS, timeout=30)
+        r.encoding = 'utf-8'
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            seen = set()
+            for a in soup.find_all('a', href=True):
+                m = re.search(r'race_id=(\d{12})', a['href'])
+                if not m:
+                    continue
+                rid = m.group(1)
+                if rid in seen:
+                    continue
+                seen.add(rid)
+                t = a.get_text(' ', strip=True)
+                mt = re.search(r'(\d{1,2})R', t)
+                mm = re.search(r'(\d{1,2}):(\d{2})', t)
+                if not mt or not mm:
+                    continue
+                out.append((rid, int(mt.group(1)), f'{int(mm.group(1)):02d}:{mm.group(2)}'))
+    except Exception:
+        pass
+    _race_list_cache[ds] = out
+    return out
+
+
 def fill_results(runners):
-    """对今天已开赛但仍显示「出馬表」的中央赛事，从赛事结果页/马匹战绩页补着顺、人气"""
+    """对最近 3 天已开赛的中央赛事补着顺/人气：日期+场次+开赛时间定位 race_id，再查结果页"""
     import datetime
     BJ = datetime.timezone(datetime.timedelta(hours=8))
     now = datetime.datetime.now(BJ)
-    today_md = (now.month, now.day)
     recent = set()
     for d in range(0, 3):
         day = now - datetime.timedelta(days=d)
         recent.add((day.month, day.day))
     changed = 0
     dbg = []
-    rl = today_race_list()
-    dbg.append(f'赛事列表条数={len(rl)} 样例={[(x[0], x[1], x[2][:24]) for x in rl[:3]]}')
     for r in runners:
         if r.get('region') != '中央' or r.get('status') not in ('出馬表', ''):
             continue
@@ -989,29 +1021,43 @@ def fill_results(runners):
         if not re.fullmatch(r'\d{2}:\d{2}', t):
             continue
         hh, mm = int(t[:2]), int(t[3:])
-        if now.hour * 60 + now.minute < hh * 60 + mm + 10:
-            continue  # 还没开赛
+        # 只有“今天”的比赛才需要等开赛；往日的比赛一律已结束
+        if (int(m.group(1)), int(m.group(2))) == (now.month, now.day) and \
+           now.hour * 60 + now.minute < hh * 60 + mm + 10:
+            continue
         hid = r.get('id')
         if not hid:
             continue
-        # 优先用赛事结果页（实时）；没有 rid 就从当天赛事列表反查
-        rid = r.get('rid')
+
+        mo, dy = int(m.group(1)), int(m.group(2))
+        year = now.year
+        if mo == 12 and now.month == 1:
+            year -= 1
+        elif mo == 1 and now.month == 12:
+            year += 1
+        ds = f'{year}{mo:02d}{dy:02d}'
+
+        rid = r.get('rid') or ''
         if not rid:
-            rid = match_race_id(r.get('race', ''), rl)
+            rn_m = re.search(r'(\d+)R', r.get('race') or '')
+            rn = int(rn_m.group(1)) if rn_m else None
+            target = f'{(hh + 1) % 24:02d}:{mm:02d}'  # 北京时间 → 日本时间
+            lst = race_list_for_date(ds)
+            for cand, cno, ct in lst:
+                if rn == cno and ct == target:
+                    rid = cand
+                    break
+            if not rid and rn:
+                only = [cand for cand, cno, _ in lst if cno == rn]
+                if len(only) == 1:
+                    rid = only[0]
             if rid:
                 r['rid'] = rid
-        if not rid:
-            # 按场地代码枚举可能的 race_id，用马匹 ID 验证
-            for cand in guess_race_ids(r.get('race', ''), 2026):
-                res = race_results_map(cand)
-                if str(hid) in res:
-                    rid = cand
-                    r['rid'] = cand
-                    break
+
         if rid:
             res = race_results_map(rid)
             hit = res.get(str(hid))
-            dbg.append(f'{r.get("name")} {hid} rid={rid} 场次结果={len(res)} 命中={bool(hit)}')
+            dbg.append(f'{r.get("name")} {hid} date={ds} rid={rid} 结果={len(res)} 命中={bool(hit)}')
             if hit:
                 pos, pop = hit
                 if pos:
@@ -1021,15 +1067,14 @@ def fill_results(runners):
                     r['fav'] = pop
                 changed += 1
                 continue
+        # 兜底：查马匹战绩页（当天可能未更新）
         try:
             races = scrape_results(hid)
-        except Exception as e:
-            dbg.append(f'{r.get("name")} {hid} 查询异常 {e}')
+        except Exception:
             continue
-        dbg.append(f'{r.get("name")} {hid} time={t} 记录数={len(races)} 最近={[x.get("date") for x in races[:3]]}')
         for rec in races:
             m2 = re.search(r'/(\d{1,2})/(\d{1,2})', rec.get('date') or '')
-            if m2 and (int(m2.group(1)), int(m2.group(2))) == today_md:
+            if m2 and (int(m2.group(1)), int(m2.group(2))) == (mo, dy):
                 if rec.get('pos'):
                     r['order'] = rec['pos']
                     r['status'] = '結果確定'
@@ -1037,12 +1082,12 @@ def fill_results(runners):
                     r['fav'] = rec['pop']
                 changed += 1
                 break
-        time.sleep(0.25)
+        time.sleep(0.2)
     if changed:
         print(f'已补全 {changed} 条赛果', flush=True)
     try:
         with open('fill_debug.txt', 'w', encoding='utf-8') as f:
-            f.write(f'now={now.isoformat()} today={today_md} changed={changed}\n')
+            f.write(f'now={now.isoformat()} recent={sorted(recent)} changed={changed}\n')
             f.write('\n'.join(dbg))
     except Exception:
         pass
@@ -1082,7 +1127,7 @@ def _load_font(paths, size):
     return ImageFont.load_default()
 
 
-def make_week_image(runners, ref_date=None):
+def make_week_image(runners, ref_date=None, save_latest=True):
     """生成出赛表图片：weekly/latest.png + weekly/{周一}.png + weekly/{当天}.png
 
     ref_date 可指定参考日期（用于事后补生成某一周的图片）。
@@ -1230,7 +1275,8 @@ def make_week_image(runners, ref_date=None):
     latest = os.path.join(WEEK_IMG_DIR, 'latest.png')
     week_file = os.path.join(WEEK_IMG_DIR, f'{mon.isoformat()}.png')
     daily_file = os.path.join(WEEK_IMG_DIR, f'{now.date().isoformat()}.png')
-    img.save(latest, optimize=True)
+    if save_latest and rows:
+        img.save(latest, optimize=True)
     img.save(week_file, optimize=True)
     img.save(daily_file, optimize=True)  # 每天一张快照，不会被后续更新覆盖
     # 清理 60 天前的日图，避免仓库无限变大
@@ -1244,6 +1290,15 @@ def make_week_image(runners, ref_date=None):
             except Exception:
                 pass
     print(f'已生成出赛表图片 {daily_file}（{len(rows)} 条）', flush=True)
+
+    # 周一/周二：额外重生成上周图片，确保周日结果进入图片；
+    # 若本周还没有比赛，就让 latest 指向上周（避免空图覆盖）
+    if ref_date is None and now_real.weekday() in (0, 1):
+        prev = now_real - datetime.timedelta(days=now_real.weekday() + 1)
+        try:
+            make_week_image(runners, ref_date=prev, save_latest=(len(rows) == 0))
+        except Exception:
+            pass
 
 
 def main():
