@@ -1,11 +1,7 @@
 name: 更新本周出马
 
 on:
-  push:
-    paths:
-      - '.github/workflows/update_thisweek.yml'
-      - 'scrape_thisweek_only.py'
-      - 'scrape_and_build.py'
+  # 只在定时和手动触发时运行，避免改代码时的额外抓取覆盖数据
   schedule:
     # 周五 09:00 / 11:00（北京）：出赛表 + 周六闸位（第二个为备份，防 GitHub 跳票）
     - cron: '0 1 * * 5'
