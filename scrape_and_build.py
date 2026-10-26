@@ -949,12 +949,32 @@ def match_race_id(race_str, lst):
     return ''
 
 
+VENUE_CODES = {'東京': '05', '京都': '08', '新潟': '04', '中山': '06', '阪神': '09',
+               '中京': '07', '札幌': '01', '函館': '02', '福島': '03', '小倉': '10'}
+MEET_CANDIDATES = [(5, 1), (4, 8), (4, 9), (4, 3), (4, 4), (5, 2)]
+
+
+def guess_race_ids(race_str, year):
+    m = re.match(r'(.+?)(\d+)R', race_str or '')
+    if not m:
+        return []
+    venue, rn = m.group(1), int(m.group(2))
+    code = VENUE_CODES.get(venue)
+    if not code:
+        return []
+    return [f'{year}{code}{k:02d}{n:02d}{rn:02d}' for k, n in MEET_CANDIDATES]
+
+
 def fill_results(runners):
     """对今天已开赛但仍显示「出馬表」的中央赛事，从赛事结果页/马匹战绩页补着顺、人气"""
     import datetime
     BJ = datetime.timezone(datetime.timedelta(hours=8))
     now = datetime.datetime.now(BJ)
     today_md = (now.month, now.day)
+    recent = set()
+    for d in range(0, 3):
+        day = now - datetime.timedelta(days=d)
+        recent.add((day.month, day.day))
     changed = 0
     dbg = []
     rl = today_race_list()
@@ -963,7 +983,7 @@ def fill_results(runners):
         if r.get('region') != '中央' or r.get('status') not in ('出馬表', ''):
             continue
         m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date') or '')
-        if not m or (int(m.group(1)), int(m.group(2))) != today_md:
+        if not m or (int(m.group(1)), int(m.group(2))) not in recent:
             continue
         t = r.get('time') or ''
         if not re.fullmatch(r'\d{2}:\d{2}', t):
@@ -980,6 +1000,14 @@ def fill_results(runners):
             rid = match_race_id(r.get('race', ''), rl)
             if rid:
                 r['rid'] = rid
+        if not rid:
+            # 按场地代码枚举可能的 race_id，用马匹 ID 验证
+            for cand in guess_race_ids(r.get('race', ''), 2026):
+                res = race_results_map(cand)
+                if str(hid) in res:
+                    rid = cand
+                    r['rid'] = cand
+                    break
         if rid:
             res = race_results_map(rid)
             hit = res.get(str(hid))
