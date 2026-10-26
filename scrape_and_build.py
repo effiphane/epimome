@@ -1088,6 +1088,20 @@ def fill_results(runners):
     return runners
 
 
+def dedupe_thisweek(rows):
+    """同一匹马、同一天、同一场次只保留一条（优先保留已有着顺的）"""
+    out = {}
+    for r in rows:
+        m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date', ''))
+        md = f'{int(m.group(1)):02d}{int(m.group(2)):02d}' if m else ''
+        rn = re.search(r'(\d+)R', r.get('race', ''))
+        key = (md, r.get('id') or r.get('name'), rn.group(1) if rn else '')
+        prev = out.get(key)
+        if not prev or (not prev.get('order') and r.get('order')):
+            out[key] = r
+    return list(out.values())
+
+
 def write_thisweek(runners):
     js = '// 本文件由 scrape_and_build.py 自动生成\nconst 本周出马 = ' + \
         json.dumps(runners, ensure_ascii=False) + ';\n'
@@ -1243,9 +1257,13 @@ def make_week_image(runners, ref_date=None, save_latest=True):
         d.text((342, y + 10), clip(cls, 62, f_small), font=f_small,
                fill=GOLD if cls.startswith('G') else MUTED)
         d.text((412, y + 10), clip(r.get('race'), 300, f_cell), font=f_cell, fill=INK)
+        sire = r.get('sire') or ''
+        dot_col = GOLD if sire == 'エピファネイア' else ((61, 111, 134) if 'エフフォーリア' in sire else MUTED)
+        d.ellipse([704, y + 14, 714, y + 24], fill=dot_col)
         d.text((722, y + 10), clip(r.get('name'), 188, f_cell), font=f_cell, fill=GREEN)
         d.text((918, y + 10), clip(r.get('jockey'), 112, f_cell), font=f_cell, fill=INK)
-        d.text((1038, y + 10), clip(r.get('fav'), 66, f_cell), font=f_cell, fill=MUTED)
+        fav_disp = str(r.get('fav') or '').replace('番人気', '')
+        d.text((1038, y + 10), clip(fav_disp, 66, f_cell), font=f_cell, fill=MUTED)
         order = str(r.get('order') or '').strip()
         if order:
             bg = RANK_BG.get(int(order)) if order.isdigit() and 1 <= int(order) <= 3 else GRAY_BG
@@ -1262,6 +1280,12 @@ def make_week_image(runners, ref_date=None, save_latest=True):
     foot_y = H - 66
     d.line([pad, foot_y - 16, W - pad, foot_y - 16], fill=LINE, width=1)
     d.text((pad, foot_y), 'epimome.cn', font=f_small, fill=GOLD)
+    # 种马图例
+    lx = pad + 118
+    for label, col in (('エピファネイア', GOLD), ('エフフォーリア', (61, 111, 134))):
+        d.ellipse([lx, foot_y + 7, lx + 10, foot_y + 17], fill=col)
+        d.text((lx + 15, foot_y), label, font=f_small, fill=MUTED)
+        lx += 15 + tw(label, f_small) + 22
     note = '数据来源 netkeiba.com · 仅供学习交流'
     d.text((W - pad - tw(note, f_small), foot_y), note, font=f_small, fill=MUTED)
 
@@ -1369,6 +1393,7 @@ def main():
     if len(tw) >= MIN_THISWEEK:
         tw = merge_thisweek(tw, load_thisweek())
         tw = fill_results(tw)
+        tw = dedupe_thisweek(tw)
         write_thisweek(tw)
         try:
             make_week_image(tw)

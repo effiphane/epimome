@@ -23,15 +23,15 @@
 <meta name="twitter:image" content="https://epimome.cn/og.png">
 <style>
   :root{
-    --bg:#f8f5ee;
-    --paper:#fffdf8;
+    --bg:#eeebe0;
+    --paper:#f9f6ea;
     --ink:#22241f;
-    --muted:#7e7a6f;
+    --muted:#6f6b60;
     --line:#e2ddcf;
     --line-strong:#cfc7b3;
     --brand:#1f3b2c;
     --brand2:#14281e;
-    --gold:#a8873f;
+    --gold:#8a6a2a;
     --gold-soft:#f3ecda;
     --epi:#a8873f;
     --effo:#3d6f86;
@@ -276,6 +276,8 @@
   }
   .tw-name:hover{background-size:100% 1px}
   .tw-range{font-size:12.5px;color:var(--muted);margin:-2px 0 10px;letter-spacing:1px}
+  .tw-weeks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .tw-weeks .chip{font-size:12.5px;padding:4px 11px}
   .tw-actions{margin-bottom:14px}
   .tw-status{font-size:11px;color:var(--muted);margin-top:2px}
   .tw-cls{display:inline-block;background:var(--gold-soft);color:#7d6428;font-size:11px;padding:0 6px;border-radius:2px;margin-top:3px;font-weight:600}
@@ -286,7 +288,6 @@
   body.show-home .hero,body.show-home .toolbar,body.show-home .controls,body.show-home main,body.show-home #detail,body.show-home #changelog,body.show-home #thisweek{display:none}
   .home-wrap{max-width:860px;margin:0 auto;padding:54px 20px 60px}
   .home-hero{text-align:center;margin-bottom:40px}
-  .home-kicker{font-size:11px;letter-spacing:6px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
   .home-hero h1{
     font-family:var(--serif);font-size:54px;font-weight:700;letter-spacing:10px;
     line-height:1.2;margin:0;color:var(--brand2);
@@ -340,7 +341,7 @@
   .nav-card:hover{border-color:var(--gold);transform:translateY(-2px) scale(1.01);background:#fdfaf2}
   .nav-card:active{transform:scale(.99)}
   .home-updates,.home-birthday,.home-thisweek,.home-news,.home-videos{
-    background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:20px 22px;margin-bottom:16px;
+    padding:6px 0 22px;margin-bottom:6px;
   }
   .home-updates h2,.home-birthday h2,.home-thisweek h2,.home-news h2,.home-videos h2{
     font-family:var(--serif);font-size:15px;letter-spacing:2px;color:var(--brand);
@@ -570,6 +571,7 @@
       <div class="log-card">
         <h2>本周出马</h2>
         <div class="tw-range" id="twRange"></div>
+        <div class="tw-weeks" id="twWeeks"></div>
         <div class="tw-actions"><a class="btn-plain" id="weekImgLink" href="weekly/latest.png" target="_blank" rel="noopener">查看本周图片 ↗</a></div>
         <div id="thisweekBody"></div>
       </div>
@@ -579,7 +581,6 @@
   <section id="home">
     <div class="home-wrap">
       <div class="home-hero">
-        <div class="home-kicker">Epiphaneia Progeny Database</div>
         <h1><span class="accent">虾</span>铺开张中<span class="beta-tag">Beta</span></h1>
         <div class="home-rule"></div>
         <p class="home-sub">エピファネイア（Epiphaneia）产驹数据库</p>
@@ -602,7 +603,7 @@
         <ul id="newsList"></ul>
       </div>
       <div class="home-thisweek">
-        <h2>本周出赛</h2>
+        <h2 id="homeTwTitle">本周出赛</h2>
         <div id="homeTwBody"></div>
       </div>
       <div class="home-birthday">
@@ -704,7 +705,8 @@
     farm:'', owner:'', trainer:'', year:'',
     winnerOnly:false,
     sortKey:null, sortDir:1,
-    view:'table', page:1
+    view:(window.matchMedia && window.matchMedia('(max-width:640px)').matches) ? 'card' : 'table',
+    page:1
   };
 
   // ---------- 常量（筛选用的取值） ----------
@@ -979,6 +981,9 @@
   });
 
   renderAll();
+
+  // 窄屏（≤640px）默认切到卡片视图，并同步「表格/卡片」切换按钮的高亮
+  document.querySelectorAll('.view-toggle button').forEach(x => x.classList.toggle('active', x.dataset.view === state.view));
 
   // ---------- 详情页 ----------
   function findHorse(key){
@@ -1513,6 +1518,45 @@
     }
     return false;
   }
+  function ymd(d){
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  // 数据里出现过的周（按周一起始），最近的在前
+  function availableWeeks(all){
+    const map = new Map();
+    (all || []).forEach(r => {
+      const m = weekMondayOf(r.date);
+      if(m) map.set(ymd(m), m);
+    });
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 8);
+  }
+  // 某条记录所在周的周一
+  function weekMondayOf(dateStr){
+    const m = String(dateStr || '').match(/(\d{1,2})月(\d{1,2})日/);
+    if(!m) return null;
+    const d = new Date(new Date().getFullYear(), (+m[1]) - 1, +m[2]);
+    const day = (d.getDay() + 6) % 7;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+  }
+  // 本周有数据就用本周；否则显示最近有数据的一周（通常是上周）
+  function displayWeek(all){
+    const [curMon] = weekRange();
+    const curSun = new Date(curMon.getFullYear(), curMon.getMonth(), curMon.getDate() + 6);
+    const curRows = all.filter(r => inThisWeek(r.date));
+    if(curRows.length) return { mon: curMon, sun: curSun, rows: curRows, current: true };
+    let best = null;
+    all.forEach(r => {
+      const m = weekMondayOf(r.date);
+      if(m && (!best || m.getTime() > best.getTime())) best = m;
+    });
+    if(!best) return { mon: curMon, sun: curSun, rows: [], current: true };
+    const sun = new Date(best.getFullYear(), best.getMonth(), best.getDate() + 6);
+    const rows = all.filter(r => {
+      const m = weekMondayOf(r.date);
+      return m && m.getTime() === best.getTime();
+    });
+    return { mon: best, sun, rows, current: false };
+  }
   function rankCls(o){
     const s = String(o == null ? '' : o).trim();
     if(/^[123]$/.test(s)) return 'rank-' + s;
@@ -1570,20 +1614,40 @@
       </div>
     </div>`;
   }
+  let selectedWeekKey = null;
   function renderThisweek(){
     const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
-    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
+    const weeks = availableWeeks(all);
+    const [curMon] = weekRange();
+    const curKey = ymd(curMon);
+    if(!selectedWeekKey || !weeks.some(w => w[0] === selectedWeekKey)){
+      selectedWeekKey = weeks.some(w => w[0] === curKey) ? curKey : (weeks.length ? weeks[0][0] : curKey);
+    }
+    const sel = weeks.find(w => w[0] === selectedWeekKey);
+    const selMon = sel ? sel[1] : curMon;
+    const selSun = new Date(selMon.getFullYear(), selMon.getMonth(), selMon.getDate() + 6);
+    const list = sortByDate(all.filter(r => {
+      const m = weekMondayOf(r.date);
+      return m && ymd(m) === selectedWeekKey;
+    }));
     const rangeEl = document.getElementById('twRange');
     if(rangeEl){
-      const [mon, sun] = weekRange();
       const fmt = d => `${d.getMonth() + 1}月${d.getDate()}日`;
-      rangeEl.textContent = `${fmt(mon)} – ${fmt(sun)}`;
+      rangeEl.textContent = `${fmt(selMon)} – ${fmt(selSun)}` + (selectedWeekKey === curKey ? '' : '（往期）');
+    }
+    const wkEl = document.getElementById('twWeeks');
+    if(wkEl){
+      wkEl.innerHTML = weeks.map(([k, m]) => {
+        const s = new Date(m.getFullYear(), m.getMonth(), m.getDate() + 6);
+        const label = `${m.getMonth() + 1}/${m.getDate()}–${s.getMonth() + 1}/${s.getDate()}` + (k === curKey ? ' 本周' : '');
+        return `<button class="chip${k === selectedWeekKey ? ' active' : ''}" data-week="${k}">${label}</button>`;
+      }).join('');
     }
     const imgLink = document.getElementById('weekImgLink');
-    if(imgLink) imgLink.href = 'weekly/latest.png?v=' + Date.now();
+    if(imgLink) imgLink.href = 'weekly/' + (selectedWeekKey === curKey ? 'latest.png' : selectedWeekKey + '.png') + '?v=' + Date.now();
     const el = document.getElementById('thisweekBody');
     if(!list.length){
-      el.innerHTML = '<p style="color:var(--muted);padding:20px 0">本周暂无产驹出赛。</p>';
+      el.innerHTML = '<p style="color:var(--muted);padding:20px 0">暂无产驹出赛记录。</p>';
       return;
     }
     const shownDates = new Set();
@@ -1609,6 +1673,12 @@
     html += '</tbody></table>';
     el.innerHTML = html;
   }
+  document.getElementById('twWeeks').addEventListener('click', e => {
+    const b = e.target.closest('[data-week]');
+    if(!b) return;
+    selectedWeekKey = b.dataset.week;
+    renderThisweek();
+  });
   document.getElementById('twBtn').addEventListener('click', () => {
     document.body.classList.remove('show-detail', 'show-log', 'show-home');
     document.body.classList.add('show-tw');
@@ -1797,13 +1867,19 @@
   // ---------- 本周出赛栏目（首页固定位置） ----------
   function renderHomeTw(){
     const all = (typeof 本周出马 !== 'undefined') ? 本周出马 : [];
-    const list = sortByDate(all.filter(r => inThisWeek(r.date)));
+    const wk = displayWeek(all);
+    const list = sortByDate(wk.rows);
+    const title = document.getElementById('homeTwTitle');
+    if(title) title.textContent = wk.current ? '本周出赛' : '上周出赛';
     const el = document.getElementById('homeTwBody');
     if(!el) return;
-    const items = list.slice(0, 15).map(r =>
-      `<div class="home-tw-item"><a href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name)}</a><span>${esc((r.time ? r.time + ' ' : '') + (r.race || ''))}</span></div>`
-    ).join('');
-    el.innerHTML = items || '<div class="home-tw-item" style="color:var(--muted)">本周暂无出赛</div>';
+    const items = list.slice(0, 15).map(r => {
+      const md = String(r.date || '').match(/(\d{1,2})月(\d{1,2})日/);
+      const dshort = md ? `${+md[1]}/${+md[2]}` : '';
+      const meta = [dshort, r.time, r.race].filter(Boolean).join(' ');
+      return `<div class="home-tw-item"><a href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name)}</a><span>${esc(meta)}</span></div>`;
+    }).join('');
+    el.innerHTML = items || '<div class="home-tw-item" style="color:var(--muted)">暂无出赛</div>';
   }
 
   // ---------- 反馈窗口 ----------

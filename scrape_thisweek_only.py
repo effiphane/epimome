@@ -8,6 +8,7 @@ if len(runners) < sb.MIN_THISWEEK:
     sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')
 runners = sb.merge_thisweek(runners, sb.load_thisweek())
 runners = sb.fill_results(runners)
+runners = sb.dedupe_thisweek(runners)
 sb.write_thisweek(runners)
 sb.bump_asset_version()
 try:
