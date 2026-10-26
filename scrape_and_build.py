@@ -1082,8 +1082,11 @@ def _load_font(paths, size):
     return ImageFont.load_default()
 
 
-def make_week_image(runners):
-    """生成本周出赛表图片：weekly/latest.png（最新）+ weekly/{周一日期}.png（每周一张）"""
+def make_week_image(runners, ref_date=None):
+    """生成出赛表图片：weekly/latest.png + weekly/{周一}.png + weekly/{当天}.png
+
+    ref_date 可指定参考日期（用于事后补生成某一周的图片）。
+    """
     try:
         from PIL import Image, ImageDraw
     except Exception:
@@ -1092,7 +1095,8 @@ def make_week_image(runners):
     import datetime
 
     BJ = datetime.timezone(datetime.timedelta(hours=8))
-    now = datetime.datetime.now(BJ)
+    now_real = datetime.datetime.now(BJ)
+    now = ref_date or now_real
     mon = (now - datetime.timedelta(days=now.weekday())).date()
     sun = mon + datetime.timedelta(days=6)
 
@@ -1235,7 +1239,7 @@ def make_week_image(runners):
         if re.fullmatch(r'\d{4}-\d{2}-\d{2}\.png', name):
             try:
                 d = datetime.date.fromisoformat(name[:-4])
-                if (now.date() - d).days > 60:
+                if (now_real.date() - d).days > 60:
                     os.remove(p)
             except Exception:
                 pass
