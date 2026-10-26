@@ -1085,12 +1085,6 @@ def fill_results(runners):
         time.sleep(0.2)
     if changed:
         print(f'已补全 {changed} 条赛果', flush=True)
-    try:
-        with open('fill_debug.txt', 'w', encoding='utf-8') as f:
-            f.write(f'now={now.isoformat()} recent={sorted(recent)} changed={changed}\n')
-            f.write('\n'.join(dbg))
-    except Exception:
-        pass
     return runners
 
 
