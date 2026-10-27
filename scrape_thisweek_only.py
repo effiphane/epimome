@@ -11,7 +11,6 @@ runners = sb.merge_thisweek(runners, sb.load_thisweek())
 runners = sb.fill_results(runners)
 runners = sb.dedupe_thisweek(runners)
 sb.write_thisweek(runners)
-sb.bump_asset_version()
 try:
     sb.make_week_image(runners)
 except Exception as e:

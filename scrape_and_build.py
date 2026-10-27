@@ -59,11 +59,6 @@ def check_cookie_status():
                 status = '可能已过期'
         except Exception as e:
             status = f'检查失败（{e}）'
-    try:
-        with open('cookie_status.txt', 'w', encoding='utf-8') as f:
-            f.write(f'{now.isoformat()}  cookie={status}\n')
-    except Exception:
-        pass
     print(f'cookie 状态: {status}', flush=True)
     return status
 

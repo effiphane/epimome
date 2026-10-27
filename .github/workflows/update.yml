@@ -39,6 +39,8 @@ jobs:
             echo "数据无变化，跳过提交"
           else
             git commit -m "auto: 更新产驹数据"
-            git pull --rebase origin main
+            git fetch origin main
+            # 冲突时以本次生成的数据为准（rebase 中 theirs = 当前提交）
+            git rebase -X theirs origin/main || { git rebase --abort; git pull --no-rebase -X theirs origin main; }
             git push
           fi

@@ -4,3 +4,4 @@ __pycache__/
 _*.json
 lineart/
 .impeccable/
+cookie_status.txt
