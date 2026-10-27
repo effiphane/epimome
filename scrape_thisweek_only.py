@@ -6,7 +6,9 @@ import scrape_and_build as sb
 sb.check_cookie_status()
 runners = sb.scrape_thisweek()
 if len(runners) < sb.MIN_THISWEEK:
-    sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')
+    # 比赛空档期属于正常情况：保留旧数据，但不算失败
+    print(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据', flush=True)
+    sys.exit(0)
 runners = sb.merge_thisweek(runners, sb.load_thisweek())
 runners = sb.fill_results(runners)
 runners = sb.dedupe_thisweek(runners)
