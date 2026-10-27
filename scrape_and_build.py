@@ -37,6 +37,34 @@ def fetch(url):
     return None
 
 
+def check_cookie_status():
+    """检查 netkeiba cookie 是否仍登录：写 cookie_status.txt 供查看"""
+    import datetime
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+    if not NETKEIBA_COOKIE:
+        status = '未设置'
+    else:
+        status = '检查失败'
+        try:
+            r = requests.get('https://regist.netkeiba.com/account/?pid=login',
+                             headers={**HEADERS, 'Cookie': NETKEIBA_COOKIE}, timeout=20)
+            r.encoding = 'euc-jp'
+            t = r.text
+            if 'ログアウト' in t or 'マイページ' in t:
+                status = '有效'
+            elif 'ログイン' in t:
+                status = '可能已过期'
+        except Exception as e:
+            status = f'检查失败（{e}）'
+    try:
+        with open('cookie_status.txt', 'w', encoding='utf-8') as f:
+            f.write(f'{now.isoformat()}  cookie={status}\n')
+    except Exception:
+        pass
+    print(f'cookie 状态: {status}', flush=True)
+    return status
+
+
 def fetch_thisweek(url):
     """带登录 cookie 抓取（本周出马完整列表需要会员）"""
     headers = dict(HEADERS)
@@ -210,7 +238,10 @@ def scrape_results(hid):
             continue
 
         def get(i):
-            return cells[i] if i is not None and i < len(cells) else ''
+            v = cells[i] if i is not None and i < len(cells) else ''
+            v = str(v or '').strip()
+            # netkeiba 用 ** / - 表示无数据（如不计时的比赛），统一清空
+            return '' if v in ('**', '-', '--', '—') else v
 
         races.append({
             'date': get(i_date), 'venue': get(i_venue), 'race': get(i_race),

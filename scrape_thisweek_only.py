@@ -3,6 +3,7 @@
 import sys
 import scrape_and_build as sb
 
+sb.check_cookie_status()
 runners = sb.scrape_thisweek()
 if len(runners) < sb.MIN_THISWEEK:
     sys.exit(f'本周出赛抓取异常（{len(runners)} 条 < {sb.MIN_THISWEEK}），保留旧数据')

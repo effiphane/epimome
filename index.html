@@ -26,7 +26,7 @@
     --bg:#eeebe0;
     --paper:#f9f6ea;
     --ink:#22241f;
-    --muted:#6f6b60;
+    --muted:#66625a;
     --line:#e2ddcf;
     --line-strong:#cfc7b3;
     --brand:#1f3b2c;
@@ -79,8 +79,8 @@
   .beta-tag{
     display:inline-block;vertical-align:super;margin-left:8px;
     font-family:"PingFang SC","Segoe UI",sans-serif;
-    font-size:10.5px;font-weight:600;letter-spacing:1px;
-    color:var(--gold);border:1px solid var(--gold);border-radius:2px;
+    font-size:11px;font-weight:600;letter-spacing:1px;
+    color:#7d6428;border:1px solid var(--gold);border-radius:2px;
     padding:0 7px;
   }
   .sub{margin-top:10px;font-size:15px;color:var(--muted)}
@@ -303,13 +303,15 @@
   }
   .sire-card:hover{border-color:var(--gold);transform:translateY(-2px);background:#fdfaf2}
   .sire-card:active{transform:scale(.995)}
+  .sire-photo{width:100%;aspect-ratio:4/5;overflow:hidden;border-radius:2px;background:#f2eee4;margin-bottom:16px}
+  .sire-photo img{width:100%;height:100%;object-fit:cover;display:block}
   .sire-cta{margin-top:12px;font-size:12.5px;color:var(--muted);letter-spacing:1px;transition:color var(--ease)}
   .sire-card:hover .sire-cta{color:var(--gold)}
   .sire-card.boss{border-left:3px solid var(--gold)}
   .sire-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
   .sire-name{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:1px}
   .sire-en{color:var(--muted);font-size:12.5px;font-style:italic}
-  .sire-tag{display:inline-block;border:1px solid var(--gold);color:var(--gold);font-size:10.5px;padding:0 7px;border-radius:2px;font-weight:600;letter-spacing:1px}
+  .sire-tag{display:inline-block;border:1px solid var(--gold);color:#7d6428;font-size:11px;padding:0 7px;border-radius:2px;font-weight:600;letter-spacing:1px}
   .sire-rows{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:13px}
   .sire-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding:4px 0}
   .sire-row span{color:var(--muted)}
@@ -349,6 +351,16 @@
   }
   .home-updates ul{list-style:none}
   .home-updates li{padding:7px 0;border-bottom:1px dotted var(--line);font-size:13.5px}
+  .home-more{
+    display:inline-block;margin-top:10px;padding:0;border:none;cursor:pointer;
+    background-color:transparent;font-family:inherit;
+    font-size:13px;color:var(--brand);font-weight:600;
+    background-image:linear-gradient(currentColor,currentColor);
+    background-size:0 1px;background-position:0 100%;background-repeat:no-repeat;
+    transition:background-size .2s ease;
+  }
+  .home-more:hover{background-size:100% 1px}
+  .home-more[hidden]{display:none}
   .bd-empty{color:var(--muted);font-size:13.5px;padding:4px 0}
   .bd-horse{
     display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;
@@ -481,6 +493,8 @@
     .home-hero h1{font-size:38px;letter-spacing:6px}
     .view-toggle{margin-left:0}
     .home-nav,.home-sires{grid-template-columns:1fr}
+    .sire-photo{aspect-ratio:16/10}
+    .sire-photo img{object-position:center 30%}
     .stats{gap:0}
     .stat{padding:3px 10px;font-size:12px}
     .back-home{position:static;display:inline-block;margin-bottom:14px}
@@ -495,7 +509,7 @@
     <h1>虾铺开张中<span class="beta-tag">Beta</span></h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
     <div class="stats" id="stats"></div>
-    <button class="log-btn" id="twBtn">本周出马</button>
+    <button class="log-btn" id="twBtn">本周出赛</button>
     <button class="log-btn" id="logBtn">更新日志</button>
     <div class="search-wrap">
       <input type="search" id="search" placeholder="搜索马名 / 英文名 / 母名 / 母父 / 牧场 / 马主 / 调教师…">
@@ -569,7 +583,7 @@
     <div class="log-wrap">
       <button class="detail-back back-btn" id="twBackBtn">← 返回</button>
       <div class="log-card">
-        <h2>本周出马</h2>
+        <h2>本周出赛</h2>
         <div class="tw-range" id="twRange"></div>
         <div class="tw-weeks" id="twWeeks"></div>
         <div class="tw-actions"><a class="btn-plain" id="weekImgLink" href="weekly/latest.png" target="_blank" rel="noopener">查看本周图片 ↗</a></div>
@@ -597,6 +611,7 @@
       <div class="home-updates">
         <h2>信息更新</h2>
         <ul id="homeUpdates"></ul>
+        <button class="home-more" id="homeUpdatesMore">查看完整更新日志 →</button>
       </div>
       <div class="home-news" id="homeNews" hidden>
         <h2>中文资讯</h2>
@@ -605,6 +620,7 @@
       <div class="home-thisweek">
         <h2 id="homeTwTitle">本周出赛</h2>
         <div id="homeTwBody"></div>
+        <button class="home-more" id="homeTwMore" hidden>查看全部 →</button>
       </div>
       <div class="home-birthday">
         <h2>今日寿星</h2>
@@ -623,9 +639,9 @@
   </footer>
 
   <!-- 反馈弹窗 -->
-  <div class="modal" id="feedbackModal" hidden>
+  <div class="modal" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" hidden>
     <div class="modal-box">
-      <h2>反馈 / 报错</h2>
+      <h2 id="feedbackTitle">反馈 / 报错</h2>
       <p>这是纯静态网站，没法直接收表单。请把要反馈的问题或报错发到 GitHub Issues，我看到后会处理。</p>
       <div class="modal-actions">
         <a class="modal-btn" href="https://github.com/effiphane/epimome/issues/new" target="_blank" rel="noopener">去 GitHub 提交反馈 ↗</a>
@@ -655,6 +671,9 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
       {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
     ));
+  }
+  function cleanCell(v){
+    return String(v == null ? '' : v).replace(/\*\*/g, '');
   }
   function parseRec(rec){
     if(!rec) return {races:0, wins:0, raw:''};
@@ -1382,7 +1401,7 @@
   const DETAIL_VER = '20261022';  // 详情文件版本号，避免浏览器使用旧的错误缓存
   function detailExtraHtml(h){
     const ped = h.ped ? `<div class="ped-box"><h3>5代血统</h3>${renderPedTable(h.ped)}</div>` : '';
-    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>人气</th><th>骑手</th><th>距离</th><th>体重</th><th>上がり</th><th>通過</th><th>着差</th><th>タイム</th></tr></thead><tbody>${h.races.map(r => `<tr><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${rankBadge(r.pos)}</td><td>${esc(r.pop||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td><td>${esc(r.weight||'')}</td><td>${esc(r.agari||'')}</td><td>${esc(r.pass||'')}</td><td>${esc(r.margin||'')}</td><td>${esc(r.time||'')}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const races = (h.races && h.races.length) ? `<div class="wins-box"><h3>比赛履历（${h.races.length}场）</h3><table class="wins-table"><thead><tr><th>日期</th><th>赛事</th><th>着順</th><th>人气</th><th>骑手</th><th>距离</th><th>体重</th><th>上がり</th><th>通過</th><th>着差</th><th>タイム</th></tr></thead><tbody>${h.races.map(r => `<tr><td>${esc(r.date||'')}</td><td>${esc(r.race||'')}</td><td>${rankBadge(r.pos)}</td><td>${esc(r.pop||'')}</td><td>${esc(r.jockey||'')}</td><td>${esc(r.dist||'')}</td><td>${esc(cleanCell(r.weight))}</td><td>${esc(cleanCell(r.agari))}</td><td>${esc(cleanCell(r.pass))}</td><td>${esc(cleanCell(r.margin))}</td><td>${esc(cleanCell(r.time))}</td></tr>`).join('')}</tbody></table></div>` : '';
     return ped + races + ((h.races && h.races.length) ? statsHtml(buildStats(h.races)) : '');
   }
   function renderDetailExtra(h){
@@ -1700,6 +1719,7 @@
         .map(([k, v]) => `<div class="sire-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
       const count = data.filter(h => h.sire === s.name).length;
       return `<div class="sire-card${boss ? ' boss' : ''}" data-sire="${esc(s.name)}" tabindex="0" role="button" aria-label="查看 ${esc(s.name)} 的产驹">
+        ${s.id ? `<div class="sire-photo"><img src="photos/${esc(s.id)}.jpg" alt="${esc(s.name)}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
         <div class="sire-head">
           <span class="sire-name">${esc(s.name)}</span>
           <span class="sire-en">${esc(s.en || '')}</span>
@@ -1714,11 +1734,15 @@
     }).join('');
   }
   function renderHomeUpdates(){
+    const fe = (typeof 功能更新 !== 'undefined') ? 功能更新 : [];
     const de = (typeof 数据更新 !== 'undefined') ? 数据更新 : [];
     const el = document.getElementById('homeUpdates');
     if(!el) return;
-    if(!de.length){ el.innerHTML = '<li>暂无更新</li>'; return; }
-    el.innerHTML = de.slice(0, 8).map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('');
+    if(!fe.length && !de.length){ el.innerHTML = '<li>暂无更新</li>'; return; }
+    // 功能更新（手动、更有意义）优先，不足 3 条时用数据更新补齐
+    let list = fe.slice(0, 3);
+    if(list.length < 3) list = list.concat(de.slice(0, 3 - list.length));
+    el.innerHTML = list.map(x => `<li><span class="log-date">${esc(x.date)}</span>${esc(x.text)}</li>`).join('');
   }
   function renderNews(){
     const list = (typeof 中文资讯 !== 'undefined') ? 中文资讯.slice() : [];
@@ -1841,6 +1865,7 @@
   });
   sireCardsEl.addEventListener('keydown', e => {
     if(e.key !== 'Enter' && e.key !== ' ') return;
+    if(e.target.closest('.sire-link')) return;
     const card = e.target.closest('[data-sire]');
     if(card){ e.preventDefault(); gotoCard(card); }
   });
@@ -1851,6 +1876,16 @@
     else if(nav === 'tw'){ document.body.className = 'show-tw'; renderThisweek(); window.scrollTo(0, 0); }
     else if(nav === 'log'){ document.body.className = 'show-log'; renderChangelog(); window.scrollTo(0, 0); }
   }));
+  document.getElementById('homeUpdatesMore').addEventListener('click', () => {
+    document.body.className = 'show-log';
+    renderChangelog();
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('homeTwMore').addEventListener('click', () => {
+    document.body.className = 'show-tw';
+    renderThisweek();
+    window.scrollTo(0, 0);
+  });
   const homeSearchEl = document.getElementById('homeSearch');
   homeSearchEl.addEventListener('keydown', e => {
     if(e.key !== 'Enter') return;
@@ -1880,13 +1915,36 @@
       return `<div class="home-tw-item"><a href="#/horse/${encodeURIComponent(r.id || r.name)}">${esc(r.name)}</a><span>${esc(meta)}</span></div>`;
     }).join('');
     el.innerHTML = items || '<div class="home-tw-item" style="color:var(--muted)">暂无出赛</div>';
+    const moreBtn = document.getElementById('homeTwMore');
+    if(moreBtn){
+      if(list.length > 15){
+        moreBtn.hidden = false;
+        moreBtn.textContent = `查看全部 ${list.length} 场 →`;
+      } else {
+        moreBtn.hidden = true;
+      }
+    }
   }
 
   // ---------- 反馈窗口 ----------
   const feedbackModal = document.getElementById('feedbackModal');
-  document.getElementById('feedbackBtn').addEventListener('click', () => { feedbackModal.hidden = false; });
-  document.getElementById('feedbackClose').addEventListener('click', () => { feedbackModal.hidden = true; });
-  feedbackModal.addEventListener('click', e => { if(e.target === feedbackModal) feedbackModal.hidden = true; });
+  const feedbackClose = document.getElementById('feedbackClose');
+  function openFeedback(){ feedbackModal.hidden = false; feedbackClose.focus(); }
+  function closeFeedback(){ feedbackModal.hidden = true; document.getElementById('feedbackBtn').focus(); }
+  document.getElementById('feedbackBtn').addEventListener('click', openFeedback);
+  feedbackClose.addEventListener('click', closeFeedback);
+  feedbackModal.addEventListener('click', e => { if(e.target === feedbackModal) closeFeedback(); });
+  document.addEventListener('keydown', e => {
+    if(feedbackModal.hidden) return;
+    if(e.key === 'Escape'){ closeFeedback(); return; }
+    if(e.key === 'Tab'){
+      const f = feedbackModal.querySelectorAll('a[href], button:not([disabled])');
+      if(!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
 
   // ---------- 初始渲染首页内容（body 默认 show-home） ----------
   renderSireCards();
