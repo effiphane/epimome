@@ -26,9 +26,12 @@ NETKEIBA_COOKIE = (os.environ.get('NETKEIBA_COOKIE', '')
 
 
 def fetch(url):
+    headers = dict(HEADERS)
+    if NETKEIBA_COOKIE:
+        headers['Cookie'] = NETKEIBA_COOKIE
     for _ in range(3):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=30)
+            r = requests.get(url, headers=headers, timeout=30)
             r.encoding = 'euc-jp'
             if r.status_code == 200:
                 return r
