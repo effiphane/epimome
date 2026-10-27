@@ -59,7 +59,7 @@
   /* ===== 顶部 ===== */
   .hero{
     background:var(--bg);color:var(--ink);
-    padding:42px 20px 34px;text-align:center;position:relative;
+    padding:26px 20px 22px;text-align:center;position:relative;
     border-bottom:3px double var(--line-strong);
   }
   /* 统一的返回按钮样式 */
@@ -73,8 +73,8 @@
   .back-home{position:absolute;top:18px;left:20px;z-index:3}
   .tag{font-size:11.5px;letter-spacing:4px;color:var(--muted);text-transform:uppercase}
   h1{
-    font-family:var(--serif);font-size:36px;font-weight:700;letter-spacing:6px;
-    margin-top:8px;color:var(--brand);
+    font-family:var(--serif);font-size:31px;font-weight:700;letter-spacing:5px;
+    margin-top:6px;color:var(--brand);
   }
   .beta-tag{
     display:inline-block;vertical-align:super;margin-left:8px;
@@ -83,13 +83,13 @@
     color:#7d6428;border:1px solid var(--gold);border-radius:2px;
     padding:0 7px;
   }
-  .sub{margin-top:10px;font-size:15px;color:var(--muted)}
+  .sub{margin-top:6px;font-size:14.5px;color:var(--muted)}
   .sub .ja{color:var(--brand);font-weight:600}
   .sub .effo{color:var(--effo);font-weight:600}
   .sub .mid{margin:0 6px;color:var(--line-strong)}
   .stats{
     display:flex;flex-wrap:wrap;justify-content:center;gap:0;
-    margin-top:22px;position:relative;z-index:1;
+    margin-top:14px;position:relative;z-index:1;
   }
   .stat{
     padding:4px 18px;font-size:13px;color:var(--muted);
@@ -101,13 +101,13 @@
   .stat.effo b{color:var(--effo)}
   .log-btn{
     background:transparent;border:1px solid var(--line-strong);color:var(--muted);
-    padding:6px 15px;border-radius:2px;font-size:13px;cursor:pointer;margin-top:18px;
+    padding:6px 15px;border-radius:2px;font-size:13px;cursor:pointer;margin-top:12px;
     margin-left:4px;margin-right:4px;
     transition:transform var(--ease),border-color var(--ease),color var(--ease);
   }
   .log-btn:hover{border-color:var(--gold);color:var(--brand);transform:scale(1.02)}
   .log-btn:active{transform:scale(.98)}
-  .search-wrap{max-width:600px;margin:22px auto 0;position:relative;z-index:1}
+  .search-wrap{max-width:600px;margin:16px auto 0;position:relative;z-index:1}
   .search-wrap input{
     width:100%;padding:12px 16px;border:1px solid var(--line-strong);border-radius:2px;
     font-size:15px;outline:none;color:var(--ink);background:var(--paper);
@@ -116,7 +116,7 @@
   .search-wrap input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,135,63,.12)}
 
   /* ===== 工具栏 ===== */
-  .toolbar{max-width:1180px;margin:20px auto 0;padding:0 18px;position:relative;z-index:2}
+  .toolbar{max-width:1340px;margin:20px auto 0;padding:0 18px;position:relative;z-index:2}
   .panel{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:16px 20px}
   .frow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
   .frow + .frow{margin-top:12px}
@@ -150,7 +150,7 @@
   .btn-plain:active{transform:scale(.98)}
 
   /* ===== 控制条 ===== */
-  .controls{max-width:1180px;margin:14px auto 0;padding:0 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .controls{max-width:1340px;margin:14px auto 0;padding:0 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .count{font-size:13px;color:var(--muted)}
   .count b{color:var(--brand)}
   .view-toggle{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:2px;background:var(--paper);padding:2px}
@@ -164,18 +164,18 @@
   .view-toggle button.active{background:var(--brand);color:#fff}
 
   /* ===== 表格 ===== */
-  main{max-width:1180px;margin:16px auto 0;padding:0 18px}
+  main{max-width:1340px;margin:16px auto 0;padding:0 18px}
   .table-wrap{background:var(--paper);border:1px solid var(--line);border-radius:2px;overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:1150px}
   thead th{
     position:sticky;top:0;background:var(--bg);color:var(--brand);text-align:left;
-    padding:11px 12px;font-weight:600;white-space:nowrap;font-size:12px;letter-spacing:1px;
+    padding:11px 10px;font-weight:600;white-space:nowrap;font-size:12px;letter-spacing:1px;
     border-bottom:2px solid var(--line-strong);
   }
   thead th.sortable{cursor:pointer;user-select:none;transition:color var(--ease)}
   thead th.sortable:hover{color:var(--gold)}
   thead th .arr{opacity:.6;font-size:10px;margin-left:3px}
-  tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap}
+  tbody td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap}
   tbody tr{transition:background var(--ease)}
   tbody tr:hover{background:#f4f0e6}
   .nm{font-weight:700;font-size:13.5px}
@@ -424,6 +424,16 @@
   body.show-detail #detail{display:block}
   .detail-wrap{max-width:1600px;margin:0 auto;padding:24px 20px 60px}
   .detail-back{margin-bottom:18px}
+  /* 子页面的返回做成轻量文字链，不再是一块实心按钮悬在卡片外 */
+  .detail-back.back-btn{
+    background:transparent;border:none;color:var(--muted);
+    padding:4px 0;font-weight:600;font-size:13.5px;
+    background-image:linear-gradient(currentColor,currentColor);
+    background-repeat:no-repeat;background-position:0 100%;background-size:0 1px;
+    transition:color var(--ease),background-size .2s ease;
+  }
+  .detail-back.back-btn:hover{background-color:transparent;color:var(--gold);transform:none;background-size:100% 1px}
+  .detail-back.back-btn:active{transform:none}
   .detail-card{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:28px}
   .detail-head{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
   .detail-photo{flex:0 0 220px;max-width:220px}
@@ -434,8 +444,8 @@
   .detail-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
   .detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 26px;margin-top:16px}
   .info-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--line);padding:8px 0;font-size:13.5px}
-  .info-row dt{color:var(--muted)}
-  .info-row dd{font-weight:600;text-align:right;overflow-wrap:anywhere}
+  .info-row dt{color:var(--muted);flex:0 0 auto;white-space:nowrap}
+  .info-row dd{font-weight:600;text-align:right;overflow-wrap:anywhere;min-width:0}
   .detail-rec{font-size:17px;margin-top:14px}
   .detail-loading{color:var(--muted);font-size:13.5px;padding:16px 0}
   .detail-nk{
@@ -841,6 +851,12 @@
     }).join('') + '</tr>';
   }
 
+  // 列表里价格只留金额，去掉「(2022年 セレクトセール)」这类拍卖会说明（详情页仍显示全称）
+  function shortPrice(v){
+    if(!v) return '';
+    return String(v).replace(/[（(][^)）]*[)）]/g, '').trim();
+  }
+
   function recCell(h){
     const p = parseRec(h.rec);
     let cls = 'rec';
@@ -864,8 +880,8 @@
       <td>${esc(h.dam||'')}</td>
       <td>${esc(h.bms||'')}</td>
       <td>${esc(formatTrainer(h.trainer))}</td>
-      <td class="price">${esc(h.raise||'')}</td>
-      <td class="price">${esc(h.auction||'')}</td>
+      <td class="price">${esc(shortPrice(h.raise))}</td>
+      <td class="price" title="${esc(h.auction||'')}">${esc(shortPrice(h.auction))}</td>
       <td>${formatPrize(h.prize)}</td>
       ${recCell(h)}
     </tr>`;
@@ -1828,15 +1844,18 @@
       </tr>`).join('');
     document.getElementById('detailBody').innerHTML = `
       <div class="detail-card">
-        <div class="detail-main">
-          <h2>${esc(s.name)}${s.en ? `<span class="en">${esc(s.en)}</span>` : ''}</h2>
-          <div class="detail-badges">
-            ${s.tag ? `<span class="sire-tag">${esc(s.tag)}</span>` : ''}
+        <div class="detail-head">
+          ${s.id ? `<div class="detail-photo"><img src="photos/${esc(s.id)}.jpg" alt="${esc(s.name)}" onerror="this.parentElement.style.display='none'"></div>` : ''}
+          <div class="detail-main">
+            <h2>${esc(s.name)}${s.en ? `<span class="en">${esc(s.en)}</span>` : ''}</h2>
+            <div class="detail-badges">
+              ${s.tag ? `<span class="sire-tag">${esc(s.tag)}</span>` : ''}
+            </div>
+            <div class="detail-info">${info}</div>
+            ${s.wins ? `<div class="detail-rec">主胜鞍 ${esc(s.wins)}</div>` : ''}
+            ${s.career ? `<p class="sire-career" style="margin-top:8px">${esc(s.career)}</p>` : ''}
+            ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
           </div>
-          <div class="detail-info">${info}</div>
-          ${s.wins ? `<div class="detail-rec">主胜鞍 ${esc(s.wins)}</div>` : ''}
-          ${s.career ? `<p class="sire-career" style="margin-top:8px">${esc(s.career)}</p>` : ''}
-          ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
         </div>
         <div class="wins-box">
           <h3>店员（产驹）${kids.length} 匹${kids.length > shown.length ? ` · 先显示前 ${shown.length} 匹` : ''}</h3>

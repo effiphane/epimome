@@ -226,7 +226,7 @@ def scrape_results(hid):
     i_time = col('タイム')
     i_margin = col('着差')
     i_pass = col('通過')
-    i_agari = col('上がり')
+    i_agari = col('上り')  # 注意：不是「上がり指数」，后者是指数且多为会员数据
     i_weight = col('馬体重')
 
     races = []
