@@ -10,3 +10,16 @@
 
 /moves.js
   Cache-Control: no-cache, must-revalidate
+
+# 手动维护的文件（改了要立刻生效）
+/corrections.js
+  Cache-Control: no-cache, must-revalidate
+
+/sire-info.js
+  Cache-Control: no-cache, must-revalidate
+
+/news.js
+  Cache-Control: no-cache, must-revalidate
+
+/videos.js
+  Cache-Control: no-cache, must-revalidate
