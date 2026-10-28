@@ -7,3 +7,6 @@
 
 /updates.js
   Cache-Control: no-cache, must-revalidate
+
+/moves.js
+  Cache-Control: no-cache, must-revalidate

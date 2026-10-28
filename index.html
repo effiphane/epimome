@@ -342,10 +342,10 @@
   }
   .nav-card:hover{border-color:var(--gold);transform:translateY(-2px) scale(1.01);background:#fdfaf2}
   .nav-card:active{transform:scale(.99)}
-  .home-updates,.home-birthday,.home-thisweek,.home-news,.home-videos{
+  .home-updates,.home-birthday,.home-thisweek,.home-news,.home-videos,.home-moves{
     padding:6px 0 22px;margin-bottom:6px;
   }
-  .home-updates h2,.home-birthday h2,.home-thisweek h2,.home-news h2,.home-videos h2{
+  .home-updates h2,.home-birthday h2,.home-thisweek h2,.home-news h2,.home-videos h2,.home-moves h2{
     font-family:var(--serif);font-size:15px;letter-spacing:2px;color:var(--brand);
     margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);
   }
@@ -392,6 +392,23 @@
   .video-cover{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:8px;background:#f0ece2;display:block}
   .video-card .vtitle{font-weight:600;font-size:13.5px;color:var(--ink);display:block}
   .video-card .vmeta{color:var(--muted);font-size:12px;margin-top:4px;display:block}
+  /* ===== 次走 / 近况 ===== */
+  .mv-item{padding:9px 0;border-bottom:1px dotted var(--line);font-size:13.5px}
+  .mv-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .mv-head a{font-weight:700;color:var(--ink);text-decoration:none;transition:color var(--ease)}
+  .mv-head a:hover{color:var(--gold)}
+  .mv-head .mv-date{color:var(--muted);font-size:12px;white-space:nowrap}
+  .mv-text{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.6;white-space:pre-wrap}
+  .detail-move{
+    background:var(--gold-soft);border-radius:2px;padding:12px 15px;margin-top:14px;
+  }
+  .detail-move-label{
+    display:block;font-size:11.5px;font-weight:600;letter-spacing:2px;
+    color:#7d6428;margin-bottom:5px;
+  }
+  .detail-move-text{font-size:14px;line-height:1.7;color:var(--ink);white-space:pre-wrap}
+  .detail-move-date{display:block;margin-top:6px;font-size:11.5px;color:var(--muted)}
+
   .home-feedback{
     display:block;margin:8px auto 0;background:transparent;color:var(--muted);
     border:1px solid var(--line-strong);padding:9px 26px;border-radius:2px;
@@ -632,6 +649,10 @@
         <div id="homeTwBody"></div>
         <button class="home-more" id="homeTwMore" hidden>查看全部 →</button>
       </div>
+      <div class="home-moves" id="homeMoves" hidden>
+        <h2>最新动向</h2>
+        <ul id="movesList" style="list-style:none"></ul>
+      </div>
       <div class="home-birthday">
         <h2>今日寿星</h2>
         <div id="birthdayBody"></div>
@@ -668,9 +689,13 @@
 <script src="news.js?v=2026102709"></script>
 <script src="videos.js?v=2026102709"></script>
 <script src="stats.js?v=2026102709"></script>
+<script src="moves.js?v=2026102709"></script>
 <script>
   const data = 产驹数据;
   const PER_PAGE = 20;
+  // 次走/近况：moves.js 由「发布动向」从 种马数据.xlsx 生成，文件不存在时为空
+  const MOVES = (typeof 最新动向 !== 'undefined' && 最新动向) ? 最新动向 : {};
+  function moveOf(name){ return (name && MOVES[name]) || null; }
   // 应用数据修正（corrections.js，手动修正不会自动更新覆盖）
   if (typeof 数据修正 !== 'undefined' && 数据修正) {
     data.forEach(h => { const fix = 数据修正[h.id]; if (fix) Object.assign(h, fix); });
@@ -1075,6 +1100,7 @@
       if(age != null) infoList.splice(5, 0, ['年龄', age + '岁']);
     }
     const info = infoList.filter(([k,v]) => v).map(([k,v]) => `<div class="info-row"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+    const mv = moveOf(h.name);
     document.getElementById('detailBody').innerHTML = `
       <div class="detail-card">
         <div class="detail-head">
@@ -1087,6 +1113,11 @@
               <span class="chip" style="cursor:default"><span class="dot ${sc}"></span>${esc(h.sire||'')}</span>
               ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
             </div>
+            ${mv ? `<div class="detail-move">
+              <span class="detail-move-label">次走・近况</span>
+              <div class="detail-move-text">${esc(mv.text)}</div>
+              ${mv.updated ? `<span class="detail-move-date">更新于 ${esc(mv.updated)}</span>` : ''}
+            </div>` : ''}
             <div class="detail-info">${info}</div>
             ${h.rec ? `<div class="detail-rec ${recCls}">成绩：${esc(h.rec)}</div>` : ''}
             ${nk ? `<a class="detail-nk" href="${nk}" target="_blank" rel="noopener">去 netkeiba 看完整资料 ↗</a>` : ''}
@@ -1801,6 +1832,7 @@
     renderHomeUpdates();
     renderBirthday();
     renderHomeTw();
+    renderHomeMoves();
     renderNews();
     renderVideos();
     window.scrollTo(0, 0);
@@ -1945,6 +1977,30 @@
     }
   }
 
+  // ---------- 首页「最新动向」栏目 ----------
+  function renderHomeMoves(){
+    const box = document.getElementById('homeMoves');
+    const ul = document.getElementById('movesList');
+    if(!box || !ul) return;
+    const list = Object.keys(MOVES)
+      .map(name => Object.assign({ name: name }, MOVES[name] || {}))
+      .filter(x => x.text)
+      .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')));
+    if(!list.length){ box.hidden = true; return; }
+    ul.innerHTML = list.slice(0, 8).map(x => {
+      const h = data.find(d => d.name === x.name);
+      const id = h ? (h.id || h.name) : '';
+      const title = id
+        ? `<a href="#/horse/${encodeURIComponent(id)}">${esc(x.name)}</a>`
+        : `<span style="font-weight:700;color:var(--brand)">${esc(x.name)}</span>`;
+      return `<li class="mv-item">
+        <div class="mv-head">${title}${x.updated ? `<span class="mv-date">${esc(x.updated)}</span>` : ''}</div>
+        <div class="mv-text">${esc(x.text)}</div>
+      </li>`;
+    }).join('');
+    box.hidden = false;
+  }
+
   // ---------- 反馈窗口 ----------
   const feedbackModal = document.getElementById('feedbackModal');
   const feedbackClose = document.getElementById('feedbackClose');
@@ -1970,6 +2026,7 @@
   renderHomeUpdates();
   renderBirthday();
   renderHomeTw();
+  renderHomeMoves();
   renderNews();
   renderVideos();
 </script>
