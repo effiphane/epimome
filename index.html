@@ -37,11 +37,13 @@
     --effo:#3d6f86;
     --colt:#40597a;
     --filly:#9a5a6b;
-    --geld:#8b8b84;
+    --geld:#6f6d66;
     --serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
     --ease:.16s ease;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  /* hidden 属性必须真的隐藏：.grid / .pagination 等 display 规则会把它顶掉 */
+  [hidden]{display:none!important}
   body{
     font-family:"PingFang SC","Hiragino Sans","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
     background-color:var(--bg);color:var(--ink);line-height:1.6;
@@ -99,6 +101,15 @@
   .stat b{color:var(--ink);font-size:15px;margin-right:4px;font-weight:700}
   .stat.epi b{color:var(--gold)}
   .stat.effo b{color:var(--effo)}
+  button.stat{
+    background:transparent;border:0;border-left:1px solid var(--line);
+    font-family:inherit;cursor:pointer;
+    transition:color var(--ease),background var(--ease);
+  }
+  button.stat:hover{color:var(--brand)}
+  .stat.active{background:var(--brand);color:#f4f1e6}
+  .stat.active b{color:#fff}
+  .stat.active.epi b,.stat.active.effo b{color:#fff}
   .log-btn{
     background:transparent;border:1px solid var(--line-strong);color:var(--muted);
     padding:6px 15px;border-radius:2px;font-size:13px;cursor:pointer;margin-top:12px;
@@ -176,6 +187,7 @@
   thead th.sortable:hover{color:var(--gold)}
   thead th .arr{opacity:.6;font-size:10px;margin-left:3px}
   tbody td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap}
+  th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
   tbody tr{transition:background var(--ease)}
   tbody tr:hover{background:#f4f0e6}
   .nm{font-weight:700;font-size:13.5px}
@@ -190,10 +202,10 @@
   .sex.geld{background:var(--geld)}
   .status{display:inline-block;padding:0 6px;border-radius:2px;font-size:11px;font-weight:600;color:#fff;margin-left:5px;vertical-align:middle}
   .status.active{background:#3f6b52}
-  .status.retired{background:#8d8b83}
+  .status.retired{background:#6f6d66}
   .status.breeding{background:var(--gold)}
   .status.local{background:#75627f}
-  .status.unregistered{background:#a1927f}
+  .status.unregistered{background:#7d6f5c}
   .color-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
   .rec{font-weight:600}
   .rec.none{color:var(--muted);font-weight:400}
@@ -211,6 +223,10 @@
   .card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
   .card .nm{font-size:16px;margin-top:2px}
   .card .en{color:var(--muted);font-size:12.5px;margin-top:-4px}
+  /* 卡片里种马名不该比马名还大（首页 .sire-name 是 20px 宋体） */
+  .card .sire-name{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:0}
+  .card-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .card-foot .price{margin-left:auto}
   .card-foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
 
   /* ===== 分页 ===== */
@@ -584,6 +600,7 @@
     <div class="grid" id="cardView" hidden></div>
     <div id="empty" hidden>
       <div>没有找到匹配的产驹，换个条件试试吧。</div>
+      <button class="btn-plain" id="emptyReset" style="margin-top:16px">清除搜索和筛选</button>
     </div>
     <div class="pagination" id="pagination" hidden>
       <button id="prevPage">← 上一页</button>
@@ -761,7 +778,7 @@
     q:'', sire:'全部', sex:'全部', color:'全部',
     farm:'', owner:'', trainer:'', year:'',
     winnerOnly:false,
-    sortKey:null, sortDir:1,
+    sortKey:'prize', sortDir:-1,
     view:(window.matchMedia && window.matchMedia('(max-width:640px)').matches) ? 'card' : 'table',
     page:1
   };
@@ -783,9 +800,9 @@
     const effo = data.filter(h=>h.sire==='エフフォーリア').length;
     const won = data.filter(h=>parseRec(h.rec).wins>0).length;
     document.getElementById('stats').innerHTML = `
-      <span class="stat epi">店长 エピファネイア <b>${epi}</b></span>
-      <span class="stat effo">息子 エフフォーリア <b>${effo}</b></span>
-      <span class="stat">总产驹 <b>${data.length}</b> 匹</span>
+      <button class="stat epi${state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア">店长 エピファネイア <b>${epi}</b></button>
+      <button class="stat effo${state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア">息子 エフフォーリア <b>${effo}</b></button>
+      <button class="stat${state.sire === '' || state.sire === '全部' ? ' active' : ''}" data-sire="">总产驹 <b>${data.length}</b> 匹</button>
       <span class="stat">已获胜 <b>${won}</b></span>`;
   }
 
@@ -863,9 +880,9 @@
     {key:'dam',    label:'母名'},
     {key:'bms',    label:'母父'},
     {key:'trainer',label:'调教师'},
-    {key:'raise',  label:'募集价格'},
-    {key:'auction',label:'拍卖价格'},
-    {key:'prize',  label:'赏金'},
+    {key:'raise',  label:'募集价格', num:true},
+    {key:'auction',label:'拍卖价格', num:true},
+    {key:'prize',  label:'赏金',     num:true},
     {key:'rec',    label:'成绩'},
   ];
 
@@ -875,7 +892,8 @@
       const sortable = !NON_SORTABLE.has(c.key);
       const isSort = state.sortKey === c.key;
       const arr = isSort ? (state.sortDir === 1 ? '▲' : '▼') : '';
-      return `<th${sortable ? ' class="sortable"' : ''} data-key="${c.key}">${c.label}<span class="arr">${arr}</span></th>`;
+      const cls = [sortable ? 'sortable' : '', c.num ? 'num' : ''].filter(Boolean).join(' ');
+      return `<th${cls ? ` class="${cls}"` : ''} data-key="${c.key}">${c.label}<span class="arr">${arr}</span></th>`;
     }).join('') + '</tr>';
   }
 
@@ -899,7 +917,7 @@
     const xc = sexClass[h.sex] || 'geld';
     const xn = h.sex || '';
     return `<tr>
-      <td><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(horseStatus(h))}</td>
+      <td><span class="dot ${sc}" title="${esc(h.sire||'')}"></span><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(horseStatus(h))}</td>
       <td class="en-col">${esc(h.en||'')}</td>
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
       <td>${colorBadge(h.color)}</td>
@@ -908,9 +926,9 @@
       <td>${esc(h.dam||'')}</td>
       <td>${esc(h.bms||'')}</td>
       <td>${esc(formatTrainer(h.trainer))}</td>
-      <td class="price">${esc(shortPrice(h.raise))}</td>
-      <td class="price" title="${esc(h.auction||'')}">${esc(shortPrice(h.auction))}</td>
-      <td>${formatPrize(h.prize)}</td>
+      <td class="price num">${esc(shortPrice(h.raise))}</td>
+      <td class="price num" title="${esc(h.auction||'')}">${esc(shortPrice(h.auction))}</td>
+      <td class="num">${formatPrize(h.prize)}</td>
       ${recCell(h)}
     </tr>`;
   }
@@ -929,12 +947,17 @@
         <span class="dot ${sc}"></span><span class="sire-name">${esc(h.sire||'')}</span>
         <span class="sex ${xc}">${esc(h.sex||'')}</span>
         ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
-        ${statusBadge(horseStatus(h))}
       </div>
       <div class="nm">${esc(h.name||'')}</div>
       ${h.en?`<div class="en">${esc(h.en)}</div>`:''}
+      ${(() => {
+        const meta = [h.year ? h.year + '年' : '', h.dam || '', formatTrainer(h.trainer)].filter(Boolean).join(' · ');
+        return meta ? `<div class="card-meta">${esc(meta)}</div>` : '';
+      })()}
       <div class="card-foot">
         <span class="${recCls}">${h.rec ? esc(h.rec) : '未出走'}</span>
+        ${statusBadge(horseStatus(h))}
+        <span class="price">${formatPrize(h.prize)}</span>
       </div>
     </article>`;
   }
@@ -957,8 +980,8 @@
     if(!full.length){
       document.getElementById('tbody').innerHTML = '';
       cardView.innerHTML = '';
-      tableWrap.hidden = state.view !== 'table';
-      cardView.hidden = state.view !== 'card';
+      tableWrap.hidden = true;
+      cardView.hidden = true;
       empty.hidden = false;
       pagination.hidden = true;
       return;
@@ -1005,16 +1028,29 @@
   });
 
   document.getElementById('ageSel').addEventListener('change', e => { state.year = e.target.value; state.page = 1; render(); });
+
+  // 页头统计 = 种马筛选入口（店长 / 儿子 / 全部）
+  document.getElementById('stats').addEventListener('click', e => {
+    const b = e.target.closest('[data-sire]');
+    if(!b) return;
+    const v = b.dataset.sire;
+    state.sire = v === '' ? '全部' : v;
+    state.page = 1;
+    renderStats(); render();
+    window.scrollTo(0, 0);
+  });
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
 
-  document.getElementById('resetBtn').addEventListener('click', () => {
+  function resetAll(){
     state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
     state.farm=''; state.owner=''; state.trainer=''; state.year='';
-    state.winnerOnly=false; state.sortKey=null; state.page=1;
+    state.winnerOnly=false; state.sortKey='prize'; state.sortDir=-1; state.page=1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
     renderAll();
-  });
+  }
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+  document.getElementById('emptyReset').addEventListener('click', resetAll);
 
   document.getElementById('thead').addEventListener('click', e => {
     const th = e.target.closest('th[data-key]'); if(!th) return;
@@ -1024,7 +1060,7 @@
       state.sortDir *= -1;
     } else {
       state.sortKey = key;
-      state.sortDir = (key === 'rec' || key === 'bd' || key === 'year') ? -1 : 1;
+      state.sortDir = (key === 'bd' || key === 'year' || key === 'prize') ? -1 : 1;
     }
     renderThead(); state.page = 1; render();
   });
