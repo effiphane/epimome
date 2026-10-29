@@ -902,7 +902,7 @@
       <button class="bm${!isBms && state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
       <button class="bm${!isBms && state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
       ${BMS.length ? `<div class="bm-head">母父</div>
-      <button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot bms"></span>エピファネイアBMS <b>${BMS.length}</b></button>` : ''}
+      <button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot bms"></span>エピファネイア <b>${BMS.length}</b></button>` : ''}
       <div class="bm-head">按生年</div>
       ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${cur.filter(h => h.year === y).length}</b></button>`).join('')}
       <div class="bm-head">按状态</div>
