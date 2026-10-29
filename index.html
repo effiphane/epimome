@@ -35,6 +35,7 @@
     --gold-soft:#f3ecda;
     --epi:#a8873f;
     --effo:#3d6f86;
+    --bms:#8a5a72;
     --colt:#40597a;
     --filly:#9a5a6b;
     --geld:#6f6d66;
@@ -183,7 +184,7 @@
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
 
   /* ===== 账本式布局：左侧书签 + 右侧列表 ===== */
-  .ledger{display:grid;grid-template-columns:188px 1fr;gap:14px;align-items:start}
+  .ledger{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start}
   .ledger-body{min-width:0}
   .bookmarks{
     background:var(--paper);border:1px solid var(--line);border-radius:2px;
@@ -242,6 +243,7 @@
   .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
   .dot.epi{background:var(--epi)}
   .dot.effo{background:var(--effo)}
+  .dot.bms{background:var(--bms)}
   .sire-name{white-space:nowrap}
   .sex{display:inline-block;padding:0 6px;border-radius:2px;font-size:12px;font-weight:600;color:#fff}
   .sex.colt{background:var(--colt)}
@@ -892,12 +894,13 @@
     const stCount = {};
     cur.forEach(h => { const s = horseStatus(h); stCount[s] = (stCount[s] || 0) + 1; });
     const statuses = ['現役', '地方', '退役・繁殖', '退役', '未登录'].filter(s => stCount[s]);
-    const noneSelected = !isBms && (state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
+    // 「全部」= 当前数据集里的全部，数字要跟着切换，避免和列表对不上
+    const noneSelected = (isBms || state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
     el.innerHTML = `
-      <button class="bm${noneSelected ? ' active' : ''}" data-sire="">全部 <b>${data.length}</b></button>
+      <button class="bm${noneSelected ? ' active' : ''}" data-all="1">全部 <b>${cur.length}</b></button>
       <button class="bm${!isBms && state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
       <button class="bm${!isBms && state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
-      ${BMS.length ? `<button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot epi"></span>母父エピファネイア <b>${BMS.length}</b></button>` : ''}
+      ${BMS.length ? `<button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot bms"></span>エピファネイアBMS <b>${BMS.length}</b></button>` : ''}
       <div class="bm-head">按生年</div>
       ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${cur.filter(h => h.year === y).length}</b></button>`).join('')}
       <div class="bm-head">按状态</div>
@@ -905,6 +908,13 @@
   }
 
   document.getElementById('bookmarks').addEventListener('click', e => {
+    const all = e.target.closest('[data-all]');
+    if(all){
+      // 只清条件，不切数据集
+      state.sire = '全部'; state.year = ''; state.status = '全部'; state.page = 1;
+      renderStats(); renderBookmarks(); render();
+      return;
+    }
     const src = e.target.closest('[data-src]');
     if(src){
       state.source = src.dataset.src;
@@ -1052,7 +1062,7 @@
       : [['母父', h.bms], ['生日', h.bd],
          ['募集价格', h.raise], ['拍卖价格', h.auction]];
     return `<tr class="main" data-id="${esc(h.id || h.name)}">
-      <td class="namecell">${isBms ? '' : `<span class="dot ${sc}" title="${esc(h.sire||'')}"></span>`}<span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
+      <td class="namecell">${isBms ? `<span class="dot bms" title="母父 エピファネイア"></span>` : `<span class="dot ${sc}" title="${esc(h.sire||'')}"></span>`}<span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
       <td>${h.year != null ? esc(h.year) : '—'}</td>
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
       <td>${esc(h.color||'—')}</td>
@@ -1079,7 +1089,7 @@
     else recCls += ' zero';
     return `<article class="card" data-id="${esc(h.id || h.name)}">
       <div class="card-top">
-        <span class="dot ${sc}"></span><span class="sire-name">${esc(h.sire||'')}</span>
+        ${state.source === 'bms' ? '<span class="dot bms"></span>' : `<span class="dot ${sc}"></span>`}<span class="sire-name">${esc(h.sire||'')}</span>
         <span class="sex ${xc}">${esc(h.sex||'')}</span>
         ${h.color ? `<span class="chip" style="cursor:default">${colorBadge(h.color)}</span>` : ''}
       </div>
