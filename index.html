@@ -185,7 +185,12 @@
   .bookmarks{
     background:var(--paper);border:1px solid var(--line);border-radius:2px;
     padding:8px 0;position:sticky;top:12px;
+    max-height:calc(100vh - 24px);overflow-y:auto;
   }
+  /* 横向滚动时冻结马名列 */
+  .table-wrap thead th:first-child{position:sticky;left:0;z-index:3;background:var(--bg)}
+  .table-wrap tbody tr.main td:first-child{position:sticky;left:0;z-index:1;background:var(--paper)}
+  .table-wrap tbody tr.main:hover td:first-child{background:#f4f0e6}
   .bm{
     display:block;width:100%;text-align:left;background:transparent;border:0;
     border-left:3px solid transparent;padding:9px 14px;font-family:inherit;
@@ -832,7 +837,7 @@
 
   // ---------- 状态 ----------
   const state = {
-    q:'', sire:'全部', sex:'全部', color:'全部',
+    q:'', sire:'全部', sex:'全部', color:'全部', status:'全部',
     farm:'', owner:'', trainer:'', year:'',
     winnerOnly:false,
     sortKey:'prize', sortDir:-1,
@@ -885,13 +890,18 @@
     const epi = data.filter(h => h.sire === 'エピファネイア').length;
     const effo = data.filter(h => h.sire === 'エフフォーリア').length;
     const years = [...new Set(data.map(h => h.year).filter(y => y != null))].sort((a,b) => b - a);
-    const noneSelected = (state.sire === '全部' || state.sire === '') && !state.year;
+    const stCount = {};
+    data.forEach(h => { const s = horseStatus(h); stCount[s] = (stCount[s] || 0) + 1; });
+    const statuses = ['現役', '地方', '退役・繁殖', '退役', '未登录'].filter(s => stCount[s]);
+    const noneSelected = (state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
     el.innerHTML = `
       <button class="bm${noneSelected ? ' active' : ''}" data-sire="">全部 <b>${data.length}</b></button>
       <button class="bm${state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
       <button class="bm${state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
       <div class="bm-head">按生年</div>
-      ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${data.filter(h => h.year === y).length}</b></button>`).join('')}`;
+      ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${data.filter(h => h.year === y).length}</b></button>`).join('')}
+      <div class="bm-head">按状态</div>
+      ${statuses.map(s => `<button class="bm${state.status === s ? ' active' : ''}" data-status="${esc(s)}">${esc(s)} <b>${stCount[s]}</b></button>`).join('')}`;
   }
 
   document.getElementById('bookmarks').addEventListener('click', e => {
@@ -908,6 +918,14 @@
       state.year = (String(state.year) === String(v)) ? '' : v;
       state.page = 1;
       renderBookmarks(); render();
+      return;
+    }
+    const st = e.target.closest('[data-status]');
+    if(st){
+      const v = st.dataset.status;
+      state.status = (state.status === v) ? '全部' : v;
+      state.page = 1;
+      renderBookmarks(); render();
     }
   });
 
@@ -922,6 +940,7 @@
       if(state.owner && h.owner !== state.owner) return false;
       if(state.trainer && h.trainer !== state.trainer) return false;
       if(state.year && String(h.year) !== String(state.year)) return false;
+      if(state.status !== '全部' && horseStatus(h) !== state.status) return false;
       if(state.winnerOnly && parseRec(h.rec).wins < 1) return false;
       if(q){
         const hay = `${h.name||''} ${h.en||''} ${h.dam||''} ${h.bms||''} ${h.farm||''} ${h.owner||''} ${h.trainer||''}`.toLowerCase();
@@ -1046,7 +1065,29 @@
   }
 
   // ---------- 渲染 ----------
+  // 把筛选状态写进 URL，方便刷新/分享
+  function syncUrl(){
+    const p = new URLSearchParams();
+    if(state.q) p.set('q', state.q);
+    if(state.sire && state.sire !== '全部') p.set('sire', state.sire);
+    if(state.year) p.set('year', state.year);
+    if(state.sex && state.sex !== '全部') p.set('sex', state.sex);
+    if(state.color && state.color !== '全部') p.set('color', state.color);
+    if(state.status && state.status !== '全部') p.set('status', state.status);
+    if(state.winnerOnly) p.set('won', '1');
+    if(state.sortKey && !(state.sortKey === 'prize' && state.sortDir === -1)){
+      p.set('sort', state.sortKey);
+      p.set('dir', state.sortDir === 1 ? 'asc' : 'desc');
+    }
+    if(state.page > 1) p.set('page', state.page);
+    const qs = p.toString();
+    try{
+      history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    }catch(e){}
+  }
+
   function render(){
+    syncUrl();
     const full = sorted(filtered());
     const totalPages = Math.max(1, Math.ceil(full.length / PER_PAGE));
     if(state.page > totalPages) state.page = totalPages;
@@ -1127,7 +1168,7 @@
 
   function resetAll(){
     state.q = ''; state.sire='全部'; state.sex='全部'; state.color='全部';
-    state.farm=''; state.owner=''; state.trainer=''; state.year='';
+    state.farm=''; state.owner=''; state.trainer=''; state.year=''; state.status='全部';
     state.winnerOnly=false; state.sortKey='prize'; state.sortDir=-1; state.page=1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
@@ -1166,6 +1207,24 @@
     state.page = parseInt(e.target.value, 10) || 1;
     render(); window.scrollTo(0, 0);
   });
+
+  // 打开带筛选参数的链接时，直接进列表页并恢复这些条件
+  (function readUrl(){
+    const p = new URLSearchParams(location.search);
+    if(!p.toString()) return;
+    if(p.has('q')){ state.q = p.get('q'); document.getElementById('search').value = state.q; }
+    if(p.has('sire')) state.sire = p.get('sire');
+    if(p.has('year')) state.year = p.get('year');
+    if(p.has('sex')) state.sex = p.get('sex');
+    if(p.has('color')) state.color = p.get('color');
+    if(p.has('status')) state.status = p.get('status');
+    if(p.get('won') === '1'){ state.winnerOnly = true; document.getElementById('winnerChk').checked = true; }
+    if(p.has('sort')) state.sortKey = p.get('sort');
+    if(p.get('dir') === 'asc') state.sortDir = 1;
+    if(p.get('dir') === 'desc') state.sortDir = -1;
+    if(p.has('page')) state.page = parseInt(p.get('page'), 10) || 1;
+    document.body.className = '';   // 有筛选参数 → 直接显示列表页
+  })();
 
   renderAll();
 
@@ -1964,6 +2023,7 @@
   }
   function showHome(){
     document.body.className = 'show-home';
+    try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){}
     renderSireCards();
     renderHomeUpdates();
     renderBirthday();
