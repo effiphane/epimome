@@ -94,6 +94,21 @@ def main():
 
     body = json.dumps(result, ensure_ascii=False, indent=2) if result else '{}'
 
+    # 内容有变化时，同步改掉 index.html 里的版本号，
+    # 否则浏览器会继续用缓存里的旧 moves.js（Cloudflare 默认缓存 4 小时）
+    old = ''
+    if os.path.exists(OUT):
+        old = io.open(OUT, encoding='utf-8').read()
+    new_version = None
+    if prev != result:
+        new_version = datetime.datetime.now().strftime('%Y%m%d%H%M')
+        html_path = os.path.join(HERE, 'index.html')
+        if os.path.exists(html_path):
+            html = io.open(html_path, encoding='utf-8', newline='').read()
+            html2 = re.sub(r'moves\.js\?v=\d+', 'moves.js?v=' + new_version, html)
+            if html2 != html:
+                io.open(html_path, 'w', encoding='utf-8', newline='').write(html2)
+
     out = (
         '// 本文件由「发布动向」自动生成，内容来自 种马数据.xlsx 的「次走/近况」列\n'
         '// 不要手动改这个文件 —— 改 Excel 里的那一栏，然后双击「发布动向.bat」\n'
@@ -102,6 +117,8 @@ def main():
     io.open(OUT, 'w', encoding='utf-8', newline='\n').write(out)
 
     print('读取完成：%d 匹马写了次走/近况' % len(result))
+    if new_version:
+        print('已更新资源版本号 → %s（让浏览器重新加载）' % new_version)
     if changed:
         print('本次更新了 %d 匹：%s' % (len(changed), '、'.join(changed[:8]) +
                                        ('…' if len(changed) > 8 else '')))

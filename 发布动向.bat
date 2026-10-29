@@ -15,7 +15,7 @@ if errorlevel 1 goto err
 
 echo.
 echo  [2/3] 检查有没有新内容 ...
-git add moves.js >nul 2>&1
+git add moves.js index.html >nul 2>&1
 git diff --cached --quiet
 if not errorlevel 1 goto nochange
 

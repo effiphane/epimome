@@ -1,8 +1,8 @@
-# 数据文件不做长缓存，避免浏览器拿旧数据
-/thisweek.js
+# data files: no long cache
+/data.js
   Cache-Control: no-cache, must-revalidate
 
-/data.js
+/thisweek.js
   Cache-Control: no-cache, must-revalidate
 
 /updates.js
@@ -11,7 +11,7 @@
 /moves.js
   Cache-Control: no-cache, must-revalidate
 
-# 手动维护的文件（改了要立刻生效）
+# manually maintained files
 /corrections.js
   Cache-Control: no-cache, must-revalidate
 
