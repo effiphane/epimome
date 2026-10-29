@@ -278,8 +278,9 @@
   .pagination button:hover:not(:disabled){border-color:var(--gold);transform:scale(1.02)}
   .pagination button:active:not(:disabled){transform:scale(.98)}
   .pagination button:disabled{color:#bdb8aa;border-color:var(--line);cursor:not-allowed}
-  .pagination .page-info{font-size:13px;color:var(--muted)}
+  .pagination .page-info{font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
   .pagination .page-info b{color:var(--brand)}
+  .pagination #pageSel{padding:4px 8px;font-size:13px;max-width:90px;text-align:center}
 
   /* ===== 空状态 ===== */
   #empty{text-align:center;padding:80px 20px;color:var(--muted)}
@@ -653,7 +654,7 @@
     </div>
     <div class="pagination" id="pagination" hidden>
       <button id="prevPage">← 上一页</button>
-      <span class="page-info" id="pageInfo"></span>
+      <span class="page-info">第 <select id="pageSel" aria-label="跳转到页码"></select> / <span id="pageTotal"></span> 页</span>
       <button id="nextPage">下一页 →</button>
     </div>
   </main>
@@ -1045,7 +1046,7 @@
     const start = (state.page - 1) * PER_PAGE;
     const list = full.slice(start, start + PER_PAGE);
     const countEl = document.getElementById('count');
-    countEl.innerHTML = `筛选出 <b>${full.length}</b> / ${data.length} 匹 · 第 <b>${state.page}</b> / <b>${totalPages}</b> 页`;
+    countEl.innerHTML = `筛选出 <b>${full.length}</b> / ${data.length} 匹`;
 
     const tableWrap = document.getElementById('tableView');
     const cardView = document.getElementById('cardView');
@@ -1063,7 +1064,10 @@
     }
     empty.hidden = true;
     pagination.hidden = false;
-    document.getElementById('pageInfo').textContent = `第 ${state.page} / ${totalPages} 页`;
+    const pageSel = document.getElementById('pageSel');
+    pageSel.innerHTML = Array.from({ length: totalPages }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+    pageSel.value = state.page;
+    document.getElementById('pageTotal').textContent = totalPages;
     document.getElementById('prevPage').disabled = state.page <= 1;
     document.getElementById('nextPage').disabled = state.page >= totalPages;
 
@@ -1150,6 +1154,10 @@
   });
   document.getElementById('nextPage').addEventListener('click', () => {
     state.page++; render(); window.scrollTo(0, 0);
+  });
+  document.getElementById('pageSel').addEventListener('change', e => {
+    state.page = parseInt(e.target.value, 10) || 1;
+    render(); window.scrollTo(0, 0);
   });
 
   renderAll();
@@ -1599,7 +1607,8 @@
     if(m || sm){
       // 记录进入详情前的视图（列表 / 首页 / 本周出赛 / 更新日志）
       if(!document.body.classList.contains('show-detail')){
-        preHashClass = document.body.className || 'show-home';
+        // 注意：列表页的 body class 是空字符串，不能用 || 兜底，否则会误判成首页
+        preHashClass = document.body.className;
       }
       if(m) openDetail(decodeURIComponent(m[1]));
       else openSireDetail(decodeURIComponent(sm[1]));
@@ -1607,7 +1616,7 @@
     }
     // 退出 hash 页面：回到进来之前的那一级
     if(document.body.classList.contains('show-detail')){
-      document.body.className = preHashClass || 'show-home';
+      document.body.className = preHashClass;
       window.scrollTo(0, 0);
     }
   }
@@ -1618,7 +1627,7 @@
       setTimeout(() => {
         if(location.hash){
           history.replaceState(null, '', location.pathname + location.search);
-          document.body.className = preHashClass || 'show-home';
+          document.body.className = preHashClass;
           window.scrollTo(0, 0);
         }
       }, 350);
