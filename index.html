@@ -283,7 +283,7 @@
 
   /* ===== 更新日志 ===== */
   #changelog{display:none}
-  body.show-log .hero,body.show-log .toolbar,body.show-log .controls,body.show-log main,body.show-log footer,body.show-log #detail{display:none}
+  body.show-log .hero,body.show-log .toolbar,body.show-log .controls,body.show-log main,body.show-log footer,body.show-log #detail,body.show-log #movesLog{display:none}
   body.show-log #changelog{display:block}
   .log-wrap{max-width:760px;margin:0 auto;padding:24px 20px 60px}
   .log-card{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:26px;overflow-x:auto}
@@ -294,8 +294,12 @@
   .log-date{display:inline-block;background:var(--gold-soft);color:#7d6428;font-size:12px;padding:0 7px;border-radius:2px;margin-right:8px;font-weight:600}
 
   /* ===== 本周出马 ===== */
+  #movesLog{display:none}
+  body.show-moves .hero,body.show-moves .toolbar,body.show-moves .controls,body.show-moves main,body.show-moves footer,body.show-moves #detail,body.show-moves #changelog,body.show-moves #thisweek,body.show-moves #home{display:none}
+  body.show-moves #movesLog{display:block}
+
   #thisweek{display:none}
-  body.show-tw .hero,body.show-tw .toolbar,body.show-tw .controls,body.show-tw main,body.show-tw footer,body.show-tw #detail,body.show-tw #changelog{display:none}
+  body.show-tw .hero,body.show-tw .toolbar,body.show-tw .controls,body.show-tw main,body.show-tw footer,body.show-tw #detail,body.show-tw #changelog,body.show-tw #movesLog{display:none}
   body.show-tw #thisweek{display:block}
   #thisweek .log-wrap{max-width:1600px}
   .tw-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
@@ -330,7 +334,7 @@
   /* ===== 首页 ===== */
   #home{display:none}
   body.show-home #home{display:block}
-  body.show-home .hero,body.show-home .toolbar,body.show-home .controls,body.show-home main,body.show-home #detail,body.show-home #changelog,body.show-home #thisweek{display:none}
+  body.show-home .hero,body.show-home .toolbar,body.show-home .controls,body.show-home main,body.show-home #detail,body.show-home #changelog,body.show-home #thisweek,body.show-home #movesLog{display:none}
   .home-wrap{max-width:860px;margin:0 auto;padding:54px 20px 60px}
   .home-hero{text-align:center;margin-bottom:40px}
   .home-hero h1{
@@ -484,7 +488,7 @@
 
   /* ===== 详情页 ===== */
   #detail{display:none}
-  body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer{display:none}
+  body.show-detail .hero,body.show-detail .toolbar,body.show-detail .controls,body.show-detail main,body.show-detail footer,body.show-detail #movesLog{display:none}
   body.show-detail #detail{display:block}
   .detail-wrap{max-width:1600px;margin:0 auto;padding:24px 20px 60px}
   .detail-back{margin-bottom:18px}
@@ -658,6 +662,16 @@
     </div>
   </section>
 
+  <section id="movesLog">
+    <div class="log-wrap">
+      <button class="detail-back back-btn" id="movesBackBtn">← 返回</button>
+      <div class="log-card">
+        <h2>动向日志</h2>
+        <div id="movesLogBody"></div>
+      </div>
+    </div>
+  </section>
+
   <section id="thisweek">
     <div class="log-wrap">
       <button class="detail-back back-btn" id="twBackBtn">← 返回</button>
@@ -704,6 +718,7 @@
       <div class="home-moves" id="homeMoves" hidden>
         <h2>最新动向</h2>
         <ul id="movesList" style="list-style:none"></ul>
+        <button class="home-more" id="homeMovesMore">查看完整动向日志 →</button>
       </div>
       <div class="home-birthday">
         <h2>今日寿星</h2>
@@ -2175,6 +2190,8 @@
     const box = document.getElementById('homeMoves');
     const ul = document.getElementById('movesList');
     if(!box || !ul) return;
+    const moreBtn = document.getElementById('homeMovesMore');
+    if(moreBtn) moreBtn.hidden = !MOVES_LOG.length;
     // 优先用改动日志（保留历史）；旧数据没有日志时退回当前状态
     const list = MOVES_LOG.length
       ? MOVES_LOG.map(e => ({ name: e.name, text: e.text, date: e.date })).filter(x => x.text)
@@ -2201,6 +2218,29 @@
     }).join('');
     box.hidden = false;
   }
+
+  // ---------- 动向日志（完整列表） ----------
+  function renderMovesLog(){
+    const el = document.getElementById('movesLogBody');
+    if(!el) return;
+    if(!MOVES_LOG.length){ el.innerHTML = '<p class="detail-loading">暂无记录</p>'; return; }
+    el.innerHTML = MOVES_LOG.map(x => {
+      const h = data.concat(BMS).find(d => d.name === x.name);
+      const id = h ? (h.id || h.name) : '';
+      const title = id
+        ? `<a href="#/horse/${encodeURIComponent(id)}">${esc(x.name)}</a>`
+        : `<span class="mv-name">${esc(x.name)}</span>`;
+      const d = String(x.date || '').slice(5).replace('-', '/');
+      return `<div class="mv-item">${d ? `<span class="log-date">${esc(d)}</span>` : ''}${title}<div class="mv-text">${esc(x.text)}</div></div>`;
+    }).join('');
+  }
+
+  document.getElementById('homeMovesMore').addEventListener('click', () => {
+    document.body.className = 'show-moves';
+    renderMovesLog();
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('movesBackBtn').addEventListener('click', goBack);
 
   // ---------- 反馈窗口 ----------
   const feedbackModal = document.getElementById('feedbackModal');
