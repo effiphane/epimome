@@ -26,6 +26,18 @@ def clean(v):
     return s.strip()
 
 
+def load_log():
+    """读现有的改动日志（越新越靠前）"""
+    if not os.path.exists(OUT):
+        return []
+    try:
+        txt = io.open(OUT, encoding='utf-8').read()
+        m = re.search(r'const\s*动向日志\s*=\s*(\[.*?\])\s*;', txt, re.S)
+        return json.loads(m.group(1)) if m else []
+    except Exception:
+        return []
+
+
 def load_prev():
     """读现有的 moves.js，用来判断哪些动向是新改的（保留原来的更新日期）"""
     if not os.path.exists(OUT):
@@ -109,10 +121,29 @@ def main():
             if html2 != html:
                 io.open(html_path, 'w', encoding='utf-8', newline='').write(html2)
 
+    # 改动日志：每匹马的动向一旦和上次不同，就追加一条（保留历史，不覆盖）
+    log = load_log()
+
+    def last_for(nm):
+        for e in log:
+            if e.get('name') == nm:
+                return e
+        return None
+
+    added = []
+    for nm, rec in result.items():
+        last = last_for(nm)
+        if not last or last.get('text') != rec['text']:
+            added.append({'date': rec.get('updated') or today, 'name': nm, 'text': rec['text']})
+    if added:
+        log = added + log
+    log = log[:300]   # 只保留最近 300 条
+
     out = (
         '// 本文件由「发布动向」自动生成，内容来自 种马数据.xlsx 的「次走/近况」列\n'
-        '// 不要手动改这个文件 —— 改 Excel 里的那一栏，然后双击「发布动向.bat」\n'
-        'const 最新动向 = %s;\n' % body
+        '// 不要手动改这个文件 —— 改 Excel 的那一栏，然后双击「发布动向.bat」\n'
+        'const 最新动向 = %s;\n\n'
+        'const 动向日志 = %s;\n' % (body, json.dumps(log, ensure_ascii=False, indent=2))
     )
     io.open(OUT, 'w', encoding='utf-8', newline='\n').write(out)
 

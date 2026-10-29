@@ -439,10 +439,9 @@
   .video-card .vmeta{color:var(--muted);font-size:12px;margin-top:4px;display:block}
   /* ===== 次走 / 近况 ===== */
   .mv-item{padding:9px 0;border-bottom:1px dotted var(--line);font-size:13.5px}
-  .mv-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-  .mv-head a{font-weight:700;color:var(--ink);text-decoration:none;transition:color var(--ease)}
-  .mv-head a:hover{color:var(--gold)}
-  .mv-head .mv-date{color:var(--muted);font-size:12px;white-space:nowrap}
+  .mv-item > a{font-weight:700;color:var(--ink);text-decoration:none;transition:color var(--ease)}
+  .mv-item > a:hover{color:var(--gold)}
+  .mv-name{font-weight:700;color:var(--brand)}
   .mv-text{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.6;white-space:pre-wrap}
   .detail-move{
     background:var(--gold-soft);border-radius:2px;padding:12px 15px;margin-top:14px;
@@ -736,14 +735,14 @@
 
 <script src="data.js?v=2026102709"></script>
 <script src="bms.js?v=202610292118"></script>
-<script src="updates.js?v=202610292118"></script>
+<script src="updates.js?v=202610292223"></script>
 <script src="thisweek.js?v=2026102709"></script>
 <script src="corrections.js?v=2026102801"></script>
 <script src="sire-info.js?v=2026102709"></script>
 <script src="news.js?v=2026102709"></script>
 <script src="videos.js?v=2026102709"></script>
 <script src="stats.js?v=2026102709"></script>
-<script src="moves.js?v=202610291127"></script>
+<script src="moves.js?v=202610292223"></script>
 <script>
   const data = 产驹数据;
   // 母父产驹：エピファネイア 作为母父（外祖父）的马，由抓取脚本生成 bms.js
@@ -751,6 +750,8 @@
   const PER_PAGE = 20;
   // 次走/近况：moves.js 由「发布动向」从 种马数据.xlsx 生成，文件不存在时为空
   const MOVES = (typeof 最新动向 !== 'undefined' && 最新动向) ? 最新动向 : {};
+  // 改动日志（越新越靠前），由 sync_moves.py 维护历史
+  const MOVES_LOG = (typeof 动向日志 !== 'undefined' && 动向日志) ? 动向日志 : [];
   function moveOf(name){ return (name && MOVES[name]) || null; }
   // 应用数据修正（corrections.js，手动修正不会自动更新覆盖）
   if (typeof 数据修正 !== 'undefined' && 数据修正) {
@@ -2174,23 +2175,27 @@
     const box = document.getElementById('homeMoves');
     const ul = document.getElementById('movesList');
     if(!box || !ul) return;
-    const list = Object.keys(MOVES)
-      .map(name => Object.assign({ name: name }, MOVES[name] || {}))
-      .filter(x => x.text)
-      .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')));
+    // 优先用改动日志（保留历史）；旧数据没有日志时退回当前状态
+    const list = MOVES_LOG.length
+      ? MOVES_LOG.map(e => ({ name: e.name, text: e.text, date: e.date })).filter(x => x.text)
+      : Object.keys(MOVES)
+        .map(name => Object.assign({ name: name }, MOVES[name] || {}, { date: (MOVES[name] || {}).updated }))
+        .filter(x => x.text)
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
     if(!list.length){
       ul.innerHTML = '<li class="mv-item" style="color:var(--muted)">暂无最新动向</li>';
       box.hidden = false;
       return;
     }
-    ul.innerHTML = list.slice(0, 8).map(x => {
-      const h = data.find(d => d.name === x.name);
+    ul.innerHTML = list.slice(0, 10).map(x => {
+      const h = data.concat(BMS).find(d => d.name === x.name);
       const id = h ? (h.id || h.name) : '';
       const title = id
         ? `<a href="#/horse/${encodeURIComponent(id)}">${esc(x.name)}</a>`
-        : `<span style="font-weight:700;color:var(--brand)">${esc(x.name)}</span>`;
+        : `<span class="mv-name">${esc(x.name)}</span>`;
+      const shortDate = String(x.date || '').slice(5);   // 2026-10-29 → 10-29
       return `<li class="mv-item">
-        <div class="mv-head">${title}${x.updated ? `<span class="mv-date">${esc(x.updated)}</span>` : ''}</div>
+        ${shortDate ? `<span class="log-date">${esc(shortDate)}</span>` : ''}${title}
         <div class="mv-text">${esc(x.text)}</div>
       </li>`;
     }).join('');
