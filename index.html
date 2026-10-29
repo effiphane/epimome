@@ -64,14 +64,17 @@
     padding:26px 20px 22px;text-align:center;position:relative;
     border-bottom:3px double var(--line-strong);
   }
-  /* 统一的返回按钮样式 */
+  /* 统一的返回按钮样式：轻量文字链 + 金色下划线扫过 */
   .back-btn{
-    display:inline-block;background:var(--brand);border:1px solid var(--brand);color:#fff;
-    padding:8px 16px;border-radius:2px;font-size:13.5px;font-weight:600;cursor:pointer;
-    transition:transform var(--ease),background var(--ease),border-color var(--ease);
+    display:inline-block;cursor:pointer;font-family:inherit;
+    background-color:transparent;border:none;color:var(--muted);
+    padding:4px 0;font-size:13.5px;font-weight:600;
+    background-image:linear-gradient(currentColor,currentColor);
+    background-repeat:no-repeat;background-position:0 100%;background-size:0 1px;
+    transition:color var(--ease),background-size .2s ease;
   }
-  .back-btn:hover{background:var(--brand2);transform:scale(1.02)}
-  .back-btn:active{transform:scale(.98)}
+  .back-btn:hover{color:var(--gold);background-size:100% 1px}
+  .back-btn:active{transform:none}
   .back-home{position:absolute;top:18px;left:20px;z-index:3}
   .tag{font-size:11.5px;letter-spacing:4px;color:var(--muted);text-transform:uppercase}
   h1{
@@ -505,16 +508,6 @@
   body.show-detail #detail{display:block}
   .detail-wrap{max-width:1600px;margin:0 auto;padding:24px 20px 60px}
   .detail-back{margin-bottom:18px}
-  /* 子页面的返回做成轻量文字链，不再是一块实心按钮悬在卡片外 */
-  .detail-back.back-btn{
-    background:transparent;border:none;color:var(--muted);
-    padding:4px 0;font-weight:600;font-size:13.5px;
-    background-image:linear-gradient(currentColor,currentColor);
-    background-repeat:no-repeat;background-position:0 100%;background-size:0 1px;
-    transition:color var(--ease),background-size .2s ease;
-  }
-  .detail-back.back-btn:hover{background-color:transparent;color:var(--gold);transform:none;background-size:100% 1px}
-  .detail-back.back-btn:active{transform:none}
   .detail-card{background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:28px}
   .detail-head{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
   .detail-photo{flex:0 0 220px;max-width:220px}
