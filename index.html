@@ -93,27 +93,6 @@
   .sub .ja{color:var(--brand);font-weight:600}
   .sub .effo{color:var(--effo);font-weight:600}
   .sub .mid{margin:0 6px;color:var(--line-strong)}
-  .stats{
-    display:flex;flex-wrap:wrap;justify-content:center;gap:0;
-    margin-top:14px;position:relative;z-index:1;
-  }
-  .stat{
-    padding:4px 18px;font-size:13px;color:var(--muted);
-    border-left:1px solid var(--line);
-  }
-  .stat:first-child{border-left:none}
-  .stat b{color:var(--ink);font-size:15px;margin-right:4px;font-weight:700}
-  .stat.epi b{color:var(--gold)}
-  .stat.effo b{color:var(--effo)}
-  button.stat{
-    background:transparent;border:0;border-left:1px solid var(--line);
-    font-family:inherit;cursor:pointer;
-    transition:color var(--ease),background var(--ease);
-  }
-  button.stat:hover{color:var(--brand)}
-  .stat.active{background:var(--brand);color:#f4f1e6}
-  .stat.active b{color:#fff}
-  .stat.active.epi b,.stat.active.effo b{color:#fff}
   .log-btn{
     background:transparent;border:1px solid var(--line-strong);color:var(--muted);
     padding:6px 15px;border-radius:2px;font-size:13px;cursor:pointer;margin-top:12px;
@@ -594,8 +573,6 @@
     .home-nav,.home-sires{grid-template-columns:1fr}
     .sire-photo{aspect-ratio:16/10}
     .sire-photo img{object-position:center 30%}
-    .stats{gap:0}
-    .stat{padding:3px 10px;font-size:12px}
     .back-home{position:static;display:inline-block;margin-bottom:14px}
   }
 </style>
@@ -607,7 +584,6 @@
     <div class="tag">エピファネイア産駒データベース · Epiphaneia Progeny</div>
     <h1>虾铺开张中<span class="beta-tag">Beta</span></h1>
     <div class="sub">店长 <span class="ja">エピファネイア</span>（Epiphaneia）<span class="mid">·</span> 息子 <span class="effo">エフフォーリア</span>（Efforia）</div>
-    <div class="stats" id="stats"></div>
     <button class="log-btn" id="twBtn">本周出赛</button>
     <button class="log-btn" id="logBtn">更新日志</button>
     <div class="search-wrap">
@@ -855,18 +831,6 @@
     return [...s].sort((a,b)=>a.localeCompare(b,'ja'));
   }
 
-  // ---------- 顶部统计 ----------
-  function renderStats(){
-    const epi = data.filter(h=>h.sire==='エピファネイア').length;
-    const effo = data.filter(h=>h.sire==='エフフォーリア').length;
-    const won = data.filter(h=>parseRec(h.rec).wins>0).length;
-    document.getElementById('stats').innerHTML = `
-      <button class="stat epi${state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア">店长 エピファネイア <b>${epi}</b></button>
-      <button class="stat effo${state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア">息子 エフフォーリア <b>${effo}</b></button>
-      <button class="stat${state.sire === '' || state.sire === '全部' ? ' active' : ''}" data-sire="">总产驹 <b>${data.length}</b> 匹</button>
-      <span class="stat">已获胜 <b>${won}</b></span>`;
-  }
-
   // ---------- 筛选控件 ----------
   function chipsHtml(values, stateKey, labelFn){
     const items = ['全部', ...values];
@@ -915,7 +879,7 @@
       state.source = src.dataset.src;
       state.sire = '全部'; state.year = ''; state.status = '全部';
       state.sortKey = 'prize'; state.sortDir = -1; state.page = 1;
-      renderStats(); renderBookmarks(); renderThead(); render();
+      renderBookmarks(); renderThead(); render();
       return;
     }
     const s = e.target.closest('[data-sire]');
@@ -923,7 +887,7 @@
       state.source = 'progeny';
       state.sire = s.dataset.sire === '' ? '全部' : s.dataset.sire;
       state.page = 1;
-      renderStats(); renderBookmarks(); renderThead(); render();
+      renderBookmarks(); renderThead(); render();
       return;
     }
     const y = e.target.closest('[data-year]');
@@ -1169,7 +1133,7 @@
     }
   }
 
-  function renderAll(){ renderStats(); renderFilters(); renderBookmarks(); renderThead(); render(); }
+  function renderAll(){ renderFilters(); renderBookmarks(); renderThead(); render(); }
 
   // ---------- 事件 ----------
   let searchTimer;
@@ -1193,17 +1157,7 @@
     chipClick('color', b.dataset.v);
   });
 
-  // 页头统计 = 种马筛选入口（店长 / 儿子 / 全部）
-  document.getElementById('stats').addEventListener('click', e => {
-    const b = e.target.closest('[data-sire]');
-    if(!b) return;
-    const v = b.dataset.sire;
-    state.source = 'progeny';
-    state.sire = v === '' ? '全部' : v;
-    state.page = 1;
-    renderStats(); renderBookmarks(); renderThead(); render();
-    window.scrollTo(0, 0);
-  });
+  // 种马筛选统一走左侧书签（页头统计已移除）
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
 
   function resetAll(){
