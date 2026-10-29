@@ -2193,7 +2193,7 @@
       const title = id
         ? `<a href="#/horse/${encodeURIComponent(id)}">${esc(x.name)}</a>`
         : `<span class="mv-name">${esc(x.name)}</span>`;
-      const shortDate = String(x.date || '').slice(5);   // 2026-10-29 → 10-29
+      const shortDate = String(x.date || '').slice(5).replace('-', '/');   // 2026-10-29 → 10/29
       return `<li class="mv-item">
         ${shortDate ? `<span class="log-date">${esc(shortDate)}</span>` : ''}${title}
         <div class="mv-text">${esc(x.text)}</div>
