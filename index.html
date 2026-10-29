@@ -757,7 +757,8 @@
   </div>
 
 <script src="data.js?v=2026102709"></script>
-<script src="updates.js?v=202610291251"></script>
+<script src="bms.js?v=202610292118"></script>
+<script src="updates.js?v=202610292118"></script>
 <script src="thisweek.js?v=2026102709"></script>
 <script src="corrections.js?v=2026102801"></script>
 <script src="sire-info.js?v=2026102709"></script>
@@ -767,6 +768,8 @@
 <script src="moves.js?v=202610291127"></script>
 <script>
   const data = 产驹数据;
+  // 母父产驹：エピファネイア 作为母父（外祖父）的马，由抓取脚本生成 bms.js
+  const BMS = (typeof 母父产驹 !== 'undefined' && 母父产驹) ? 母父产驹 : [];
   const PER_PAGE = 20;
   // 次走/近况：moves.js 由「发布动向」从 种马数据.xlsx 生成，文件不存在时为空
   const MOVES = (typeof 最新动向 !== 'undefined' && 最新动向) ? 最新动向 : {};
@@ -830,6 +833,7 @@
 
   // ---------- 状态 ----------
   const state = {
+    source:'progeny',   // progeny = 产驹；bms = 母父产驹
     q:'', sire:'全部', sex:'全部', color:'全部', status:'全部',
     farm:'', owner:'', trainer:'', year:'',
     winnerOnly:false,
@@ -880,29 +884,41 @@
   function renderBookmarks(){
     const el = document.getElementById('bookmarks');
     if(!el) return;
+    const cur = srcData();
+    const isBms = state.source === 'bms';
     const epi = data.filter(h => h.sire === 'エピファネイア').length;
     const effo = data.filter(h => h.sire === 'エフフォーリア').length;
-    const years = [...new Set(data.map(h => h.year).filter(y => y != null))].sort((a,b) => b - a);
+    const years = [...new Set(cur.map(h => h.year).filter(y => y != null))].sort((a,b) => b - a);
     const stCount = {};
-    data.forEach(h => { const s = horseStatus(h); stCount[s] = (stCount[s] || 0) + 1; });
+    cur.forEach(h => { const s = horseStatus(h); stCount[s] = (stCount[s] || 0) + 1; });
     const statuses = ['現役', '地方', '退役・繁殖', '退役', '未登录'].filter(s => stCount[s]);
-    const noneSelected = (state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
+    const noneSelected = !isBms && (state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
     el.innerHTML = `
       <button class="bm${noneSelected ? ' active' : ''}" data-sire="">全部 <b>${data.length}</b></button>
-      <button class="bm${state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
-      <button class="bm${state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
+      <button class="bm${!isBms && state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
+      <button class="bm${!isBms && state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
+      ${BMS.length ? `<button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot epi"></span>母父エピファネイア <b>${BMS.length}</b></button>` : ''}
       <div class="bm-head">按生年</div>
-      ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${data.filter(h => h.year === y).length}</b></button>`).join('')}
+      ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${cur.filter(h => h.year === y).length}</b></button>`).join('')}
       <div class="bm-head">按状态</div>
       ${statuses.map(s => `<button class="bm${state.status === s ? ' active' : ''}" data-status="${esc(s)}">${esc(s)} <b>${stCount[s]}</b></button>`).join('')}`;
   }
 
   document.getElementById('bookmarks').addEventListener('click', e => {
+    const src = e.target.closest('[data-src]');
+    if(src){
+      state.source = src.dataset.src;
+      state.sire = '全部'; state.year = ''; state.status = '全部';
+      state.sortKey = 'prize'; state.sortDir = -1; state.page = 1;
+      renderStats(); renderBookmarks(); renderThead(); render();
+      return;
+    }
     const s = e.target.closest('[data-sire]');
     if(s){
+      state.source = 'progeny';
       state.sire = s.dataset.sire === '' ? '全部' : s.dataset.sire;
       state.page = 1;
-      renderStats(); renderBookmarks(); render();
+      renderStats(); renderBookmarks(); renderThead(); render();
       return;
     }
     const y = e.target.closest('[data-year]');
@@ -923,9 +939,13 @@
   });
 
   // ---------- 筛选逻辑 ----------
+  // 当前正在看的数据集
+  function srcData(){ return state.source === 'bms' ? BMS : data; }
+
   function filtered(){
     const q = state.q.trim().toLowerCase();
-    return data.filter(h => {
+    return srcData().filter(h => {
+      if(state.source === 'progeny' && state.sire !== '全部' && h.sire !== state.sire) return false;
       if(state.sire !== '全部' && h.sire !== state.sire) return false;
       if(state.sex !== '全部' && h.sex !== state.sex) return false;
       if(state.color !== '全部' && h.color !== state.color) return false;
@@ -977,9 +997,23 @@
     {key:'status', label:'状态'},
   ];
 
+  // 母父产驹：把「母名 / 调教师」换成「母 / 父」，关系才说得通
+  const COLUMNS_BMS = [
+    {key:'name',   label:'马名'},
+    {key:'year',   label:'生年'},
+    {key:'sex',    label:'性别'},
+    {key:'color',  label:'毛色'},
+    {key:'dam',    label:'母'},
+    {key:'sire',   label:'父'},
+    {key:'rec',    label:'成绩'},
+    {key:'prize',  label:'赏金', num:true},
+    {key:'status', label:'状态'},
+  ];
+  function columnsFor(){ return state.source === 'bms' ? COLUMNS_BMS : COLUMNS; }
+
   const NON_SORTABLE = new Set(['sex', 'color', 'dam', 'trainer', 'rec', 'status']);
   function renderThead(){
-    document.getElementById('thead').innerHTML = '<tr>' + COLUMNS.map(c => {
+    document.getElementById('thead').innerHTML = '<tr>' + columnsFor().map(c => {
       const sortable = !NON_SORTABLE.has(c.key);
       const isSort = state.sortKey === c.key;
       const arr = isSort ? (state.sortDir === 1 ? '▲' : '▼') : '';
@@ -1004,26 +1038,32 @@
   }
 
   function rowHtml(h){
+    const isBms = state.source === 'bms';
     const sc = sireClass[h.sire] || '';
     const xc = sexClass[h.sex] || 'geld';
     const xn = h.sex || '';
+    // 产驹模式看「母名 / 调教师」；母父模式看「母（=他的女儿）/ 父（女儿配的种马）」
+    const midCells = isBms
+      ? `<td>${esc(h.dam||'—')}</td><td>${esc(h.sire||'—')}</td>`
+      : `<td>${esc(h.dam||'—')}</td><td>${esc(formatTrainer(h.trainer)||'—')}</td>`;
+    const extra = isBms
+      ? [['调教师', formatTrainer(h.trainer)], ['生日', h.bd],
+         ['募集价格', h.raise], ['拍卖价格', h.auction]]
+      : [['母父', h.bms], ['生日', h.bd],
+         ['募集价格', h.raise], ['拍卖价格', h.auction]];
     return `<tr class="main" data-id="${esc(h.id || h.name)}">
-      <td class="namecell"><span class="dot ${sc}" title="${esc(h.sire||'')}"></span><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
+      <td class="namecell">${isBms ? '' : `<span class="dot ${sc}" title="${esc(h.sire||'')}"></span>`}<span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
       <td>${h.year != null ? esc(h.year) : '—'}</td>
       <td><span class="sex ${xc}">${esc(xn)}</span></td>
       <td>${esc(h.color||'—')}</td>
-      <td>${esc(h.dam||'—')}</td>
-      <td>${esc(formatTrainer(h.trainer)||'—')}</td>
+      ${midCells}
       ${recCell(h)}
       <td class="num">${formatPrize(h.prize)}</td>
       <td>${statusBadge(horseStatus(h))}</td>
     </tr>
     <tr class="detail" hidden><td colspan="9">
       <div class="detail-grid">
-        <div><span>母父</span><b>${esc(h.bms||'—')}</b></div>
-        <div><span>生日</span><b>${esc(h.bd||'—')}</b></div>
-        <div><span>募集价格</span><b>${esc(h.raise||'—')}</b></div>
-        <div><span>拍卖价格</span><b>${esc(h.auction||'—')}</b></div>
+        ${extra.map(([k, v]) => `<div><span>${k}</span><b>${esc(v||'—')}</b></div>`).join('')}
       </div>
     </td></tr>`;
   }
@@ -1061,6 +1101,7 @@
   // 把筛选状态写进 URL，方便刷新/分享
   function syncUrl(){
     const p = new URLSearchParams();
+    if(state.source === 'bms') p.set('src', 'bms');
     if(state.q) p.set('q', state.q);
     if(state.sire && state.sire !== '全部') p.set('sire', state.sire);
     if(state.year) p.set('year', state.year);
@@ -1087,7 +1128,7 @@
     const start = (state.page - 1) * PER_PAGE;
     const list = full.slice(start, start + PER_PAGE);
     const countEl = document.getElementById('count');
-    countEl.innerHTML = `筛选出 <b>${full.length}</b> / ${data.length} 匹`;
+    countEl.innerHTML = `筛选出 <b>${full.length}</b> / ${srcData().length} 匹`;
 
     const tableWrap = document.getElementById('tableView');
     const cardView = document.getElementById('cardView');
@@ -1152,9 +1193,10 @@
     const b = e.target.closest('[data-sire]');
     if(!b) return;
     const v = b.dataset.sire;
+    state.source = 'progeny';
     state.sire = v === '' ? '全部' : v;
     state.page = 1;
-    renderStats(); render();
+    renderStats(); renderBookmarks(); renderThead(); render();
     window.scrollTo(0, 0);
   });
   document.getElementById('winnerChk').addEventListener('change', e => { state.winnerOnly = e.target.checked; state.page = 1; render(); });
@@ -1205,6 +1247,7 @@
   (function readUrl(){
     const p = new URLSearchParams(location.search);
     if(!p.toString()) return;
+    if(p.get('src') === 'bms') state.source = 'bms';
     if(p.has('q')){ state.q = p.get('q'); document.getElementById('search').value = state.q; }
     if(p.has('sire')) state.sire = p.get('sire');
     if(p.has('year')) state.year = p.get('year');
@@ -1226,7 +1269,8 @@
 
   // ---------- 详情页 ----------
   function findHorse(key){
-    return data.find(h => String(h.id) === String(key)) || data.find(h => h.name === key);
+    const all = data.concat(BMS);
+    return all.find(h => String(h.id) === String(key)) || all.find(h => h.name === key);
   }
   function renderPedTable(ped){
     if(!ped) return '';
@@ -2032,6 +2076,7 @@
     window.scrollTo(0, 0);
   }
   function openSireList(sire){
+    state.source = 'progeny';
     state.sire = sire; state.sex = '全部'; state.color = '全部'; state.q = '';
     state.year = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
     document.getElementById('search').value = '';

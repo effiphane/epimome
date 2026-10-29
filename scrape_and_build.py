@@ -79,12 +79,15 @@ def fetch_thisweek(url):
     return None
 
 
-def scrape_list(sire_id):
-    """列表页：拿到 马名/id/性别/生年/调教师/母名/母父/马主/牧场"""
+def scrape_list(sire_id, param='sire_id'):
+    """列表页：拿到 马名/id/性别/生年/调教师/父/母/母父/马主/牧场
+
+    param='sire_id' 按父名搜索；param='bms_id' 按母父搜索（netkeiba 有对称参数）。
+    """
     horses = {}
     page = 1
     while True:
-        url = f'https://db.netkeiba.com/horse/list.html?sire_id={sire_id}&range=all&page={page}'
+        url = f'https://db.netkeiba.com/horse/list.html?{param}={sire_id}&range=all&page={page}'
         r = fetch(url)
         if not r:
             break
@@ -117,6 +120,7 @@ def scrape_list(sire_id):
                 'sex': cell_text(2),
                 'birth_year': cell_text(3),
                 'trainer': cell_text(5).replace('[西]', '栗').replace('[東]', '美').replace('[地]', '地'),
+                'sire': re.sub(r'\[\]$', '', link_text(6)).strip(),
                 'dam': re.sub(r'\[\]$', '', link_text(7)).strip(),
                 'bms': re.sub(r'\[\]$', '', link_text(8)).strip(),
                 'owner': cell_text(9),
@@ -366,6 +370,25 @@ def scrape_detail(session, hid):
                 rec = re.sub(r'\s*\[.*\]', '', v)
                 rec = rec.replace('戦', '战').replace('勝', '胜')
                 d['rec'] = rec
+            elif k == '調教師':
+                # 「木村哲也(美浦)」→「美木村哲也」；地方则用「地」前缀
+                mm = re.match(r'^(.+?)[（(](.+?)[）)]$', v)
+                if mm:
+                    area = mm.group(2)
+                    prefix = '栗' if area.startswith('栗東') else ('美' if area.startswith('美浦') else '地')
+                    d['trainer'] = prefix + mm.group(1)
+                elif v:
+                    d['trainer'] = '地' + v
+            elif k == '馬主':
+                d['owner'] = v
+            elif k == '生産者':
+                d['farm'] = v
+            elif k.startswith('獲得賞金'):
+                num = parse_prize(re.sub(r'[^0-9.,]', '', v))
+                if '中央' in k:
+                    d['prize_c'] = num
+                elif '地方' in k:
+                    d['prize_l'] = num
 
     for img in soup.find_all('img'):
         src = img.get('src', '')
@@ -462,6 +485,64 @@ def scrape_horse(hid, ped_map, name=None, sex=None):
         if breed:
             detail['status'] = breed
     return detail
+
+
+def scrape_bms(ped_map):
+    """母父数据集：エピファネイア 作为母父（外祖父）的产驹。
+
+    netkeiba 的列表页支持对称的 bms_id 参数：
+    horse/list.html?bms_id=<种马ID>&range=all&page=N
+    列结构和 sire_id 完全一致，所以直接复用 scrape_list。
+    """
+    horses = scrape_list(SIRES['エピファネイア'], param='bms_id')
+    print(f'母父数据：找到 {len(horses)} 匹', flush=True)
+    if not horses:
+        return []
+
+    items = list(horses.items())
+    detail_map = {}
+    done = 0
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        futs = {ex.submit(scrape_horse, h['horse_id'], ped_map, name, h['sex']): name for name, h in items}
+        for fut in as_completed(futs):
+            name = futs[fut]
+            try:
+                detail_map[name] = fut.result()
+            except Exception:
+                detail_map[name] = {}
+            done += 1
+            if done % 50 == 0:
+                print(f'    {done}/{len(items)}', flush=True)
+            time.sleep(DELAY / WORKERS)
+
+    out = []
+    for name, h in items:
+        det = detail_map.get(name, {})
+        out.append({
+            'name': name,
+            'id': h['horse_id'],
+            'en': det.get('en'),
+            'dam': h['dam'] or None,
+            'bd': det.get('bd') or h['birth_year'] or None,
+            'sex': h['sex'] or None,
+            'color': det.get('color'),
+            'bms': 'エピファネイア',
+            'farm': h['breeder'] or None,
+            'owner': h['owner'] or None,
+            'trainer': h['trainer'] or None,
+            'raise': det.get('raise'),
+            'auction': det.get('auction'),
+            'rec': det.get('rec'),
+            'status': det.get('status'),
+            'photo': det.get('photo'),
+            'ped': det.get('ped'),
+            'year': parse_year(h['birth_year']),
+            'prize': parse_prize(h['prize']),
+            'races': det.get('races', []),
+            'sire': h['sire'] or None,
+            'sireEn': None,
+        })
+    return out
 
 
 DIST_BANDS = [('短', 0, 1400), ('英', 1401, 1800), ('中', 1801, 2400), ('长', 2401, 99999)]
@@ -1415,6 +1496,19 @@ def main():
     with open('data.js', 'w', encoding='utf-8') as f:
         f.write(js)
     print(f'已写入 data.js（{os.path.getsize("data.js")/1024/1024:.2f} MB）', flush=True)
+
+    # 母父数据集：エピファネイア 的女儿所生的产驹（netkeiba 没有母父一览，走繁殖牝馬页）
+    bms_records = scrape_bms(ped_map)
+    if bms_records:
+        write_detail_files(bms_records)
+        slim_bms = [{k: v for k, v in h.items() if k not in ('ped', 'races')} for h in bms_records]
+        with open('bms.js', 'w', encoding='utf-8') as f:
+            f.write('// 本文件由 scrape_and_build.py 自动生成\nconst 母父产驹 = ' +
+                    json.dumps(slim_bms, ensure_ascii=False) + ';\n')
+        print(f'已写入 bms.js（{len(bms_records)} 匹）', flush=True)
+    else:
+        print('母父数据为空，保留旧的 bms.js', flush=True)
+
     update_changelog(len(all_records))
     write_stats(all_records)
     bump_asset_version()
