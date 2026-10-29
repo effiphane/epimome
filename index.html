@@ -177,7 +177,46 @@
   /* ===== 表格 ===== */
   main{max-width:1340px;margin:16px auto 0;padding:0 18px}
   .table-wrap{background:var(--paper);border:1px solid var(--line);border-radius:2px;overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:13px;min-width:1150px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+
+  /* ===== 账本式布局：左侧书签 + 右侧列表 ===== */
+  .ledger{display:grid;grid-template-columns:188px 1fr;gap:14px;align-items:start}
+  .ledger-body{min-width:0}
+  .bookmarks{
+    background:var(--paper);border:1px solid var(--line);border-radius:2px;
+    padding:8px 0;position:sticky;top:12px;
+  }
+  .bm{
+    display:block;width:100%;text-align:left;background:transparent;border:0;
+    border-left:3px solid transparent;padding:9px 14px;font-family:inherit;
+    font-size:12.5px;color:var(--ink);cursor:pointer;white-space:nowrap;
+    transition:background var(--ease),color var(--ease),border-color var(--ease);
+  }
+  .bm:hover{background:#f4f0e6}
+  .bm.active{border-left-color:var(--gold);background:#f4f0e6;color:var(--brand);font-weight:700}
+  .bm b{float:right;margin-left:8px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+  .bm.active b{color:var(--gold)}
+  .bm .dot{width:6px;height:6px;margin-right:7px}
+  .bm-head{font-size:11px;letter-spacing:2px;color:var(--muted);padding:12px 14px 4px}
+
+  /* 可展开的行 */
+  tr.main{cursor:pointer}
+  td.namecell{display:flex;align-items:center;gap:8px}
+  td.namecell .en{color:var(--muted);font-size:12px}
+  .caret{
+    display:inline-block;margin-left:10px;font-size:12px;color:var(--line-strong);
+    transition:transform .18s ease,color var(--ease);user-select:none;
+  }
+  tr.main:hover .caret{color:var(--gold)}
+  tr.main.open .caret{transform:rotate(180deg)}
+  tbody tr.detail td{background:#f6f2e7;border-top:1px dashed var(--line-strong);padding:0;white-space:normal}
+  .detail-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:4px 26px;padding:12px 16px;
+  }
+  .detail-grid div{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;border-bottom:1px dotted var(--line);padding:4px 0}
+  .detail-grid span{color:var(--muted);flex:0 0 auto;white-space:nowrap}
+  .detail-grid b{font-weight:600;text-align:right}
   thead th{
     position:sticky;top:0;background:var(--bg);color:var(--brand);text-align:left;
     padding:11px 10px;font-weight:600;white-space:nowrap;font-size:12px;letter-spacing:1px;
@@ -539,6 +578,12 @@
     .home-hero h1{font-size:38px;letter-spacing:6px}
     .view-toggle{margin-left:0}
     .home-nav,.home-sires{grid-template-columns:1fr}
+    .ledger{grid-template-columns:1fr;gap:10px}
+    .bookmarks{display:flex;flex-wrap:nowrap;overflow-x:auto;padding:6px;position:static;gap:2px;-webkit-overflow-scrolling:touch}
+    .bm{flex:0 0 auto;width:auto;border-left:0;border-bottom:2px solid transparent;padding:7px 10px}
+    .bm.active{border-left:0;border-bottom-color:var(--gold)}
+    .bm b{float:none;margin-left:6px}
+    .bm-head{display:none}
     .sire-photo{aspect-ratio:16/10}
     .sire-photo img{object-position:center 30%}
     .stats{gap:0}
@@ -573,8 +618,7 @@
         <div id="colorChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
       <div class="frow">
-        <span class="flabel">生年</span>
-        <select id="ageSel"></select>
+        <span class="flabel">筛选</span>
         <label class="chk"><input type="checkbox" id="winnerChk">只看已获胜</label>
         <span class="spacer"></span>
         <button class="btn-plain" id="resetBtn">重置筛选</button>
@@ -591,16 +635,21 @@
   </div>
 
   <main>
-    <div class="table-wrap" id="tableView">
-      <table>
-        <thead id="thead"></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="grid" id="cardView" hidden></div>
-    <div id="empty" hidden>
-      <div>没有找到匹配的产驹，换个条件试试吧。</div>
-      <button class="btn-plain" id="emptyReset" style="margin-top:16px">清除搜索和筛选</button>
+    <div class="ledger">
+      <nav class="bookmarks" id="bookmarks"></nav>
+      <div class="ledger-body">
+        <div class="table-wrap" id="tableView">
+          <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="grid" id="cardView" hidden></div>
+        <div id="empty" hidden>
+          <div>没有找到匹配的产驹，换个条件试试吧。</div>
+          <button class="btn-plain" id="emptyReset" style="margin-top:16px">清除搜索和筛选</button>
+        </div>
+      </div>
     </div>
     <div class="pagination" id="pagination" hidden>
       <button id="prevPage">← 上一页</button>
@@ -819,14 +868,40 @@
     document.getElementById('sexChips').innerHTML = chipsHtml(SEXES, 'sex');
     const colors = [...new Set([...COLOR_ORDER.filter(c=>data.some(h=>h.color===c)), ...distinct('color')])];
     document.getElementById('colorChips').innerHTML = chipsHtml(colors, 'color');
-
-    const years = [...new Set(data.map(h => h.year).filter(y => y != null))].sort((a,b) => b-a);
-    const ageSel = document.getElementById('ageSel');
-    let ageHtml = '<option value="">全部</option>';
-    years.forEach(y => ageHtml += `<option value="${y}">${y}年</option>`);
-    ageSel.innerHTML = ageHtml;
-    ageSel.value = state.year;
   }
+
+  // ---------- 左侧书签：种马 / 生年 ----------
+  function renderBookmarks(){
+    const el = document.getElementById('bookmarks');
+    if(!el) return;
+    const epi = data.filter(h => h.sire === 'エピファネイア').length;
+    const effo = data.filter(h => h.sire === 'エフフォーリア').length;
+    const years = [...new Set(data.map(h => h.year).filter(y => y != null))].sort((a,b) => b - a);
+    const noneSelected = (state.sire === '全部' || state.sire === '') && !state.year;
+    el.innerHTML = `
+      <button class="bm${noneSelected ? ' active' : ''}" data-sire="">全部 <b>${data.length}</b></button>
+      <button class="bm${state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
+      <button class="bm${state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
+      <div class="bm-head">按生年</div>
+      ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${data.filter(h => h.year === y).length}</b></button>`).join('')}`;
+  }
+
+  document.getElementById('bookmarks').addEventListener('click', e => {
+    const s = e.target.closest('[data-sire]');
+    if(s){
+      state.sire = s.dataset.sire === '' ? '全部' : s.dataset.sire;
+      state.page = 1;
+      renderStats(); renderBookmarks(); render();
+      return;
+    }
+    const y = e.target.closest('[data-year]');
+    if(y){
+      const v = y.dataset.year;
+      state.year = (String(state.year) === String(v)) ? '' : v;
+      state.page = 1;
+      renderBookmarks(); render();
+    }
+  });
 
   // ---------- 筛选逻辑 ----------
   function filtered(){
@@ -872,21 +947,17 @@
   // ---------- 表格 ----------
   const COLUMNS = [
     {key:'name',   label:'马名'},
-    {key:'en',     label:'英字马名'},
+    {key:'year',   label:'生年'},
     {key:'sex',    label:'性别'},
     {key:'color',  label:'毛色'},
-    {key:'bd',     label:'生日'},
-    {key:'year',   label:'生年'},
     {key:'dam',    label:'母名'},
-    {key:'bms',    label:'母父'},
     {key:'trainer',label:'调教师'},
-    {key:'raise',  label:'募集价格', num:true},
-    {key:'auction',label:'拍卖价格', num:true},
-    {key:'prize',  label:'赏金',     num:true},
     {key:'rec',    label:'成绩'},
+    {key:'prize',  label:'赏金', num:true},
+    {key:'status', label:'状态'},
   ];
 
-  const NON_SORTABLE = new Set(['sex', 'color', 'dam', 'bms', 'trainer', 'farm', 'raise', 'auction', 'rec']);
+  const NON_SORTABLE = new Set(['sex', 'color', 'dam', 'trainer', 'rec', 'status']);
   function renderThead(){
     document.getElementById('thead').innerHTML = '<tr>' + COLUMNS.map(c => {
       const sortable = !NON_SORTABLE.has(c.key);
@@ -916,21 +987,25 @@
     const sc = sireClass[h.sire] || '';
     const xc = sexClass[h.sex] || 'geld';
     const xn = h.sex || '';
-    return `<tr>
-      <td><span class="dot ${sc}" title="${esc(h.sire||'')}"></span><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span>${statusBadge(horseStatus(h))}</td>
-      <td class="en-col">${esc(h.en||'')}</td>
-      <td><span class="sex ${xc}">${esc(xn)}</span></td>
-      <td>${colorBadge(h.color)}</td>
-      <td>${esc(h.bd||'')}</td>
+    return `<tr class="main" data-id="${esc(h.id || h.name)}">
+      <td class="namecell"><span class="dot ${sc}" title="${esc(h.sire||'')}"></span><span class="nm link" data-id="${esc(h.id || h.name)}">${esc(h.name||'')}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
       <td>${h.year != null ? esc(h.year) : '—'}</td>
-      <td>${esc(h.dam||'')}</td>
-      <td>${esc(h.bms||'')}</td>
-      <td>${esc(formatTrainer(h.trainer))}</td>
-      <td class="price num">${esc(shortPrice(h.raise))}</td>
-      <td class="price num" title="${esc(h.auction||'')}">${esc(shortPrice(h.auction))}</td>
-      <td class="num">${formatPrize(h.prize)}</td>
+      <td><span class="sex ${xc}">${esc(xn)}</span></td>
+      <td>${esc(h.color||'—')}</td>
+      <td>${esc(h.dam||'—')}</td>
+      <td>${esc(formatTrainer(h.trainer)||'—')}</td>
       ${recCell(h)}
-    </tr>`;
+      <td class="num">${formatPrize(h.prize)}</td>
+      <td>${statusBadge(horseStatus(h))}</td>
+    </tr>
+    <tr class="detail" hidden><td colspan="9">
+      <div class="detail-grid">
+        <div><span>母父</span><b>${esc(h.bms||'—')}</b></div>
+        <div><span>生日</span><b>${esc(h.bd||'—')}</b></div>
+        <div><span>募集价格</span><b>${esc(h.raise||'—')}</b></div>
+        <div><span>拍卖价格</span><b>${esc(h.auction||'—')}</b></div>
+      </div>
+    </td></tr>`;
   }
 
   // ---------- 卡片 ----------
@@ -1003,7 +1078,7 @@
     }
   }
 
-  function renderAll(){ renderStats(); renderFilters(); renderThead(); render(); }
+  function renderAll(){ renderStats(); renderFilters(); renderBookmarks(); renderThead(); render(); }
 
   // ---------- 事件 ----------
   let searchTimer;
@@ -1026,8 +1101,6 @@
     const b = e.target.closest('[data-v]'); if(!b) return;
     chipClick('color', b.dataset.v);
   });
-
-  document.getElementById('ageSel').addEventListener('change', e => { state.year = e.target.value; state.page = 1; render(); });
 
   // 页头统计 = 种马筛选入口（店长 / 儿子 / 全部）
   document.getElementById('stats').addEventListener('click', e => {
@@ -1555,8 +1628,16 @@
   }
   document.getElementById('backBtn').addEventListener('click', goBack);
   document.getElementById('tbody').addEventListener('click', e => {
-    const el = e.target.closest('[data-id]');
-    if(el) location.hash = '#/horse/' + encodeURIComponent(el.dataset.id);
+    // 点马名 → 进详情页；点行的其他位置 → 展开/收起次要信息
+    const nm = e.target.closest('.nm[data-id]');
+    if(nm){ location.hash = '#/horse/' + encodeURIComponent(nm.dataset.id); return; }
+    const tr = e.target.closest('tr.main');
+    if(!tr) return;
+    const d = tr.nextElementSibling;
+    if(d && d.classList.contains('detail')){
+      d.hidden = !d.hidden;
+      tr.classList.toggle('open', !d.hidden);
+    }
   });
   document.getElementById('cardView').addEventListener('click', e => {
     const el = e.target.closest('[data-id]');
