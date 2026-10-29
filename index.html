@@ -894,13 +894,15 @@
     const stCount = {};
     cur.forEach(h => { const s = horseStatus(h); stCount[s] = (stCount[s] || 0) + 1; });
     const statuses = ['現役', '地方', '退役・繁殖', '退役', '未登录'].filter(s => stCount[s]);
-    // 「全部」= 当前数据集里的全部，数字要跟着切换，避免和列表对不上
-    const noneSelected = (isBms || state.sire === '全部' || state.sire === '') && !state.year && state.status === '全部';
+    // 数据集（产驹 / 母父）分开成组，避免「全部」的数字在两种模式下含义不同
+    const allActive = !isBms && (state.sire === '全部' || state.sire === '');
     el.innerHTML = `
-      <button class="bm${noneSelected ? ' active' : ''}" data-all="1">全部 <b>${cur.length}</b></button>
+      <div class="bm-head">产驹</div>
+      <button class="bm${allActive ? ' active' : ''}" data-sire="">全部 <b>${data.length}</b></button>
       <button class="bm${!isBms && state.sire === 'エピファネイア' ? ' active' : ''}" data-sire="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
       <button class="bm${!isBms && state.sire === 'エフフォーリア' ? ' active' : ''}" data-sire="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
-      ${BMS.length ? `<button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot bms"></span>エピファネイアBMS <b>${BMS.length}</b></button>` : ''}
+      ${BMS.length ? `<div class="bm-head">母父</div>
+      <button class="bm${isBms ? ' active' : ''}" data-src="bms"><span class="dot bms"></span>エピファネイアBMS <b>${BMS.length}</b></button>` : ''}
       <div class="bm-head">按生年</div>
       ${years.map(y => `<button class="bm${String(state.year) === String(y) ? ' active' : ''}" data-year="${y}">${y} 年 <b>${cur.filter(h => h.year === y).length}</b></button>`).join('')}
       <div class="bm-head">按状态</div>
@@ -908,13 +910,6 @@
   }
 
   document.getElementById('bookmarks').addEventListener('click', e => {
-    const all = e.target.closest('[data-all]');
-    if(all){
-      // 只清条件，不切数据集
-      state.sire = '全部'; state.year = ''; state.status = '全部'; state.page = 1;
-      renderStats(); renderBookmarks(); render();
-      return;
-    }
     const src = e.target.closest('[data-src]');
     if(src){
       state.source = src.dataset.src;
