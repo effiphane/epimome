@@ -41,25 +41,36 @@ def fetch(url):
 
 
 def check_cookie_status():
-    """检查 netkeiba cookie 是否仍登录：写 cookie_status.txt 供查看"""
+    """检查 netkeiba cookie 是否仍有效：直接看本周出马页能读到几匹马。
+
+    未登录/已过期时该页只显示 2 匹马并提示 premium；
+    登录状态下能看到整页的完整名单。
+    """
     import datetime
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
     if not NETKEIBA_COOKIE:
         status = '未设置'
     else:
-        status = '检查失败'
         try:
-            r = requests.get('https://regist.netkeiba.com/account/?pid=login',
-                             headers={**HEADERS, 'Cookie': NETKEIBA_COOKIE}, timeout=20)
+            url = f'https://db.netkeiba.com/sire/thisweek/{SIRES["エピファネイア"]}/?type=1'
+            r = requests.get(url, headers={**HEADERS, 'Cookie': NETKEIBA_COOKIE}, timeout=25)
             r.encoding = 'euc-jp'
-            t = r.text
-            if 'ログアウト' in t or 'マイページ' in t:
-                status = '有效'
-            elif 'ログイン' in t:
-                status = '可能已过期'
+            n = r.text.count('EntryHorseList_HorseName')
+            if n > 2:
+                status = f'有效（出马页可见 {n} 匹）'
+            elif 'EntryHorseList_premium' in r.text or n <= 2:
+                status = f'可能已过期（出马页只显示 {n} 匹，未登录状态每页只有 2 匹）'
+            else:
+                status = f'无法判断（{n} 匹）'
         except Exception as e:
             status = f'检查失败（{e}）'
+    label = f'{now.isoformat()}  cookie={status}'
     print(f'cookie 状态: {status}', flush=True)
+    try:
+        with open('cookie_status.txt', 'w', encoding='utf-8') as f:
+            f.write(label + '\n')
+    except Exception:
+        pass
     return status
 
 
