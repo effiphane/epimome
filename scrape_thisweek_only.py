@@ -17,4 +17,5 @@ try:
     sb.make_week_image(runners)
 except Exception as e:
     print(f'出赛表图片生成失败（不影响数据）：{e}')
-sb.add_update_entry(f'更新本周出赛（{len(runners)}匹）')
+# 只统计本周的条目：文件里还会保留上一周的数据用于兜底，不能按总条数报
+sb.add_update_entry(f'更新本周出赛（{sb.thisweek_count(runners)}匹）')

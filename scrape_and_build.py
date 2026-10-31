@@ -943,10 +943,43 @@ def _tw_key(r):
     return (md, r.get('race', ''), r.get('name', ''))
 
 
+def _week_bounds(offset=0):
+    """返回 (周一, 周日)；offset=1 表示上一周"""
+    import datetime
+    today = datetime.date.today()
+    mon = today - datetime.timedelta(days=today.weekday()) - datetime.timedelta(weeks=offset)
+    return mon, mon + datetime.timedelta(days=6)
+
+
+def _runner_date(r):
+    import datetime
+    m = re.search(r'(\d{1,2})月(\d{1,2})日', r.get('date', '') or '')
+    if not m:
+        return None
+    try:
+        return datetime.date(datetime.date.today().year, int(m.group(1)), int(m.group(2)))
+    except ValueError:
+        return None
+
+
+def thisweek_count(runners):
+    """只数本周（周一~周日）的条目，用于更新日志"""
+    mon, sun = _week_bounds(0)
+    return sum(1 for r in runners if _runner_date(r) and mon <= _runner_date(r) <= sun)
+
+
 def merge_thisweek(new, old):
-    """合并新旧出赛数据：保留旧数据里已经跑完的比赛，避免页面刷新后丢失结果"""
+    """合并新旧出赛数据：保留旧数据里已经跑完的比赛，避免页面刷新后丢失结果。
+
+    只保留本周和上一周的旧数据（上一周用于周一早上「上周出赛」的兜底），
+    否则文件会无限累积，日志里的数量也会越报越多。
+    """
     m = {_tw_key(r): r for r in new}
+    keep_from, _ = _week_bounds(1)
     for r in old:
+        d = _runner_date(r)
+        if d and d < keep_from:
+            continue
         k = _tw_key(r)
         if k not in m:
             m[k] = r
@@ -1509,7 +1542,10 @@ def main():
     else:
         print('母父数据为空，保留旧的 bms.js', flush=True)
 
-    update_changelog(len(all_records))
+    if bms_records:
+        add_update_entry(f'更新产驹数据（{len(all_records)}匹 · 母父{len(bms_records)}匹）')
+    else:
+        update_changelog(len(all_records))
     write_stats(all_records)
     bump_asset_version()
     tw = scrape_thisweek()
