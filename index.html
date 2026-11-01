@@ -1692,18 +1692,38 @@
       else openSireDetail(decodeURIComponent(sm[1]));
       return;
     }
+    // 视图哈希：刷新后能回到原来那一页
+    if(location.hash === '#/list'){ showList(); return; }
+    if(location.hash === '#/thisweek'){ document.body.className = 'show-tw'; renderThisweek(); return; }
+    if(location.hash === '#/log'){ document.body.className = 'show-log'; renderChangelog(); return; }
+    if(location.hash === '#/moves'){ document.body.className = 'show-moves'; renderMovesLog(); return; }
+
     // 退出 hash 页面：回到进来之前的那一级
     if(document.body.classList.contains('show-detail')){
       document.body.className = preHashClass;
       window.scrollTo(0, 0);
     }
   }
+
+  // 切换视图统一走 hash（同 hash 不会触发 hashchange，需手动调用 route）
+  function go(h){
+    if(location.hash === h) route();
+    else location.hash = h;
+    window.scrollTo(0, 0);
+  }
   // 统一的返回：有 hash 就回到浏览器上一级，否则回到上一级视图（首页）
   function goBack(){
+    // 视图页（列表/本周出赛/更新日志/动向日志）直接回首页；详情页才走浏览器后退
+    if(/^#\/(list|thisweek|log|moves)$/.test(location.hash)){
+      location.hash = '';
+      showHome();
+      return;
+    }
     if(location.hash){
       history.back();
+      // 只兜底「详情页」这种 hash；视图 hash（#/list 等）要保留，刷新才能回到原页
       setTimeout(() => {
-        if(location.hash){
+        if(/^#\/(horse|sire)\//.test(location.hash)){
           history.replaceState(null, '', location.pathname + location.search);
           document.body.className = preHashClass;
           window.scrollTo(0, 0);
@@ -1742,12 +1762,7 @@
       <h3>功能更新</h3><ul class="log-list">${listHtml(fe)}</ul>
       <h3>数据更新</h3><ul class="log-list">${listHtml(de)}</ul>`;
   }
-  document.getElementById('logBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-detail', 'show-home');
-    document.body.classList.add('show-log');
-    renderChangelog();
-    window.scrollTo(0, 0);
-  });
+  document.getElementById('logBtn').addEventListener('click', () => go('#/log'));
   document.getElementById('logBackBtn').addEventListener('click', goBack);
 
   // ---------- 本周出马 ----------
@@ -1952,12 +1967,7 @@
     selectedWeekKey = b.dataset.week;
     renderThisweek();
   });
-  document.getElementById('twBtn').addEventListener('click', () => {
-    document.body.classList.remove('show-detail', 'show-log', 'show-home');
-    document.body.classList.add('show-tw');
-    renderThisweek();
-    window.scrollTo(0, 0);
-  });
+  document.getElementById('twBtn').addEventListener('click', () => go('#/thisweek'));
   document.getElementById('twBackBtn').addEventListener('click', goBack);
 
   // ---------- 首页 ----------
@@ -2035,7 +2045,7 @@
   }
   function showHome(){
     document.body.className = 'show-home';
-    try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){}
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
     renderSireCards();
     renderHomeUpdates();
     renderBirthday();
@@ -2056,8 +2066,7 @@
     state.year = ''; state.winnerOnly = false; state.sortKey = null; state.page = 1;
     document.getElementById('search').value = '';
     document.getElementById('winnerChk').checked = false;
-    history.replaceState(null, '', location.pathname + location.search);
-    showList();
+    go('#/list');
   }
   function openSireDetail(name){
     const list = (typeof 种马信息 !== 'undefined') ? 种马信息 : [];
@@ -2131,9 +2140,9 @@
   document.getElementById('homeBtn').addEventListener('click', goBack);
   document.querySelectorAll('.nav-card').forEach(c => c.addEventListener('click', () => {
     const nav = c.dataset.nav;
-    if(nav === 'list') showList();
-    else if(nav === 'tw'){ document.body.className = 'show-tw'; renderThisweek(); window.scrollTo(0, 0); }
-    else if(nav === 'log'){ document.body.className = 'show-log'; renderChangelog(); window.scrollTo(0, 0); }
+    if(nav === 'list') go('#/list');
+    else if(nav === 'tw') go('#/thisweek');
+    else if(nav === 'log') go('#/log');
   }));
   document.getElementById('homeUpdatesMore').addEventListener('click', () => {
     document.body.className = 'show-log';
@@ -2235,11 +2244,7 @@
     }).join('');
   }
 
-  document.getElementById('homeMovesMore').addEventListener('click', () => {
-    document.body.className = 'show-moves';
-    renderMovesLog();
-    window.scrollTo(0, 0);
-  });
+  document.getElementById('homeMovesMore').addEventListener('click', () => go('#/moves'));
   document.getElementById('movesBackBtn').addEventListener('click', goBack);
 
   // ---------- 反馈窗口 ----------
