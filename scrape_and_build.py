@@ -1339,8 +1339,9 @@ def make_week_image(runners, ref_date=None, save_latest=True):
             return str(s or '')
         return f'{v[0]}月{v[1]}日({WD[d.weekday()]})'
 
-    # 中央与地方赛事都包含（与网页保持一致）
-    rows = sorted([r for r in runners if in_week(r)],
+    # 只保留中央（JRA）赛事：地方赛事没有级别，且场地分散，图片上不放
+    rows = sorted([r for r in runners
+                   if in_week(r) and (r.get('region') or '中央') == '中央'],
                   key=lambda r: (md(r.get('date')) or (99, 99), r.get('time') or '99:99'))
 
     W = 1300
