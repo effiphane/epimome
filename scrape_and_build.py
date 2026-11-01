@@ -1339,9 +1339,8 @@ def make_week_image(runners, ref_date=None, save_latest=True):
             return str(s or '')
         return f'{v[0]}月{v[1]}日({WD[d.weekday()]})'
 
-    # 只保留中央（JRA）赛事
-    rows = sorted([r for r in runners
-                   if in_week(r) and (r.get('region') or '中央') == '中央'],
+    # 中央与地方赛事都包含（与网页保持一致）
+    rows = sorted([r for r in runners if in_week(r)],
                   key=lambda r: (md(r.get('date')) or (99, 99), r.get('time') or '99:99'))
 
     W = 1300
@@ -1447,10 +1446,23 @@ def make_week_image(runners, ref_date=None, save_latest=True):
     latest = os.path.join(WEEK_IMG_DIR, 'latest.png')
     week_file = os.path.join(WEEK_IMG_DIR, f'{mon.isoformat()}.png')
     daily_file = os.path.join(WEEK_IMG_DIR, f'{now.date().isoformat()}.png')
+    def _save(path):
+        # Windows 上刚写完的文件可能被杀毒/索引短暂占用，重试几次
+        for attempt in range(3):
+            try:
+                img.save(path, optimize=True)
+                return True
+            except Exception as e:
+                if attempt == 2:
+                    print(f'图片保存失败（{os.path.basename(path)}）：{e}', flush=True)
+                    return False
+                time.sleep(0.6)
+        return False
+
     if save_latest and rows:
-        img.save(latest, optimize=True)
-    img.save(week_file, optimize=True)
-    img.save(daily_file, optimize=True)  # 每天一张快照，不会被后续更新覆盖
+        _save(latest)
+    _save(week_file)
+    _save(daily_file)  # 每天一张快照，不会被后续更新覆盖
     # 清理 60 天前的日图，避免仓库无限变大
     for p in glob.glob(os.path.join(WEEK_IMG_DIR, '*.png')):
         name = os.path.basename(p)
