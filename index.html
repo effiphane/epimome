@@ -1751,7 +1751,8 @@
     if(el) location.hash = '#/horse/' + encodeURIComponent(el.dataset.id);
   });
   window.addEventListener('hashchange', route);
-  route();
+  // 首次 route() 放在脚本末尾调用：此处之后还有很多 let 声明（如 selectedWeekKey），
+  // 现在调用会因 TDZ 抛错，导致 #/thisweek 等视图渲染失败
 
   // ---------- 更新日志 ----------
   function renderChangelog(){
@@ -2275,6 +2276,9 @@
   renderHomeMoves();
   renderNews();
   renderVideos();
+
+  // 所有声明就绪后再按 URL 定位视图（刷新时靠这个回到原页面）
+  route();
 </script>
 </body>
 </html>
