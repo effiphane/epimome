@@ -19,3 +19,7 @@ except Exception as e:
     print(f'出赛表图片生成失败（不影响数据）：{e}')
 # 只统计本周的条目：文件里还会保留上一周的数据用于兜底，不能按总条数报
 sb.add_update_entry(f'更新本周出赛（{sb.thisweek_count(runners)}匹）')
+
+# 必须换掉 index.html 里的 ?v= 版本号，否则浏览器/Cloudflare 会继续用缓存里的旧 thisweek.js
+# （这次「跑了但页面还是上周数据」就是这个原因）
+sb.bump_asset_version()
