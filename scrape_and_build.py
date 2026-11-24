@@ -25,6 +25,23 @@ NETKEIBA_COOKIE = (os.environ.get('NETKEIBA_COOKIE', '')
                    .strip())  # 登录cookie（本周出马完整列表需要会员）
 
 
+def decode_page(r):
+    """按响应头声明的 charset 解码页面，避免 netkeiba 更换编码后全站乱码。
+
+    netkeiba 于 2026-11 从 EUC-JP 全面切换到 UTF-8（Content-Type 已声明 UTF-8）。
+    优先用服务器声明的 charset；没声明时依次尝试 UTF-8 / EUC-JP 兜底。
+    注意不要再用 r.encoding = 'euc-jp' 这种写死的方式。
+    """
+    m = re.search(r'charset=([\w-]+)', r.headers.get('Content-Type', ''), re.I)
+    encs = ([m.group(1).lower()] if m else []) + ['utf-8', 'euc-jp']
+    for enc in encs:
+        try:
+            return r.content.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return r.content.decode('utf-8', 'replace')
+
+
 def fetch(url):
     headers = dict(HEADERS)
     if NETKEIBA_COOKIE:
@@ -32,7 +49,6 @@ def fetch(url):
     for _ in range(3):
         try:
             r = requests.get(url, headers=headers, timeout=30)
-            r.encoding = 'euc-jp'
             if r.status_code == 200:
                 return r
         except Exception:
@@ -54,11 +70,11 @@ def check_cookie_status():
         try:
             url = f'https://db.netkeiba.com/sire/thisweek/{SIRES["エピファネイア"]}/?type=1'
             r = requests.get(url, headers={**HEADERS, 'Cookie': NETKEIBA_COOKIE}, timeout=25)
-            r.encoding = 'euc-jp'
-            n = r.text.count('EntryHorseList_HorseName')
+            txt = decode_page(r)
+            n = txt.count('EntryHorseList_HorseName')
             if n > 2:
                 status = f'有效（出马页可见 {n} 匹）'
-            elif 'EntryHorseList_premium' in r.text or n <= 2:
+            elif 'EntryHorseList_premium' in txt or n <= 2:
                 status = f'可能已过期（出马页只显示 {n} 匹，未登录状态每页只有 2 匹）'
             else:
                 status = f'无法判断（{n} 匹）'
@@ -82,7 +98,6 @@ def fetch_thisweek(url):
     for _ in range(3):
         try:
             r = requests.get(url, headers=headers, timeout=30)
-            r.encoding = 'euc-jp'
             if r.status_code == 200:
                 return r
         except Exception:
@@ -102,7 +117,7 @@ def scrape_list(sire_id, param='sire_id'):
         r = fetch(url)
         if not r:
             break
-        soup = BeautifulSoup(r.text, 'html.parser')
+        soup = BeautifulSoup(decode_page(r), 'html.parser')
         table = soup.find('table', class_='horse_list_table')
         if not table:
             break
@@ -216,7 +231,7 @@ def scrape_results(hid):
     r = fetch(f'https://db.netkeiba.com/horse/result/{hid}/')
     if not r:
         return []
-    soup = BeautifulSoup(r.text, 'html.parser')
+    soup = BeautifulSoup(decode_page(r), 'html.parser')
     table = soup.find('table', class_='db_h_race_results')
     if not table:
         return []
@@ -315,8 +330,7 @@ def check_jbis_breeding(name, sex):
                          params={'keyword': name}, headers=HEADERS, timeout=15)
         if r.status_code != 200:
             return None
-        r.encoding = 'utf-8'
-        soup = BeautifulSoup(r.text, 'html.parser')
+        soup = BeautifulSoup(decode_page(r), 'html.parser')
         jbis_id = None
         for a in soup.find_all('a', href=True):
             m = re.search(r'/horse/(\d+)/', a['href'])
@@ -329,8 +343,7 @@ def check_jbis_breeding(name, sex):
         r2 = requests.get(f'https://www.jbis.or.jp/horse/{jbis_id}/', headers=HEADERS, timeout=15)
         if r2.status_code != 200:
             return None
-        r2.encoding = 'utf-8'
-        txt = r2.text
+        txt = decode_page(r2)
         if sex == '牝' and ('繁殖牝馬情報' in txt or '繁殖牝馬' in txt):
             return '退役・繁殖'
         if sex == '牡' and ('種牡馬情報' in txt or '種牡馬' in txt):
@@ -345,8 +358,7 @@ def scrape_detail(session, hid):
     r = session.get(f'https://db.netkeiba.com/horse/{hid}/', timeout=30)
     if r.status_code != 200:
         return {}
-    r.encoding = 'euc-jp'
-    soup = BeautifulSoup(r.text, 'html.parser')
+    soup = BeautifulSoup(decode_page(r), 'html.parser')
     d = {}
 
     title = soup.find('title')
@@ -435,7 +447,7 @@ def scrape_ped(hid):
     r = fetch(f'https://db.netkeiba.com/horse/ped/{hid}/')
     if not r:
         return None
-    soup = BeautifulSoup(r.text, 'html.parser')
+    soup = BeautifulSoup(decode_page(r), 'html.parser')
     tables = soup.find_all('table')
     if not tables:
         return None
@@ -748,10 +760,9 @@ def get_race_info(race_id):
         try:
             r = requests.get(f'https://{_race_host(race_id)}/race/{kind}.html?race_id={race_id}',
                              headers=HEADERS, timeout=30)
-            r.encoding = 'utf-8'
             if r.status_code != 200:
                 continue
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             if not info['cls']:
                 title = soup.title.get_text(strip=True) if soup.title else ''
                 info['cls'] = classify_race_from_title(title)
@@ -787,9 +798,8 @@ def get_race_entries(race_id):
     try:
         r = requests.get(f'https://{_race_host(race_id)}/race/shutuba.html?race_id={race_id}',
                          headers=HEADERS, timeout=30)
-        r.encoding = 'utf-8'
         if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             for tr in soup.find_all('tr'):
                 a = tr.find('a', href=re.compile(r'/horse/\d+/'))
                 if not a:
@@ -878,7 +888,7 @@ def scrape_thisweek():
             r = fetch_thisweek(url)
             if not r:
                 continue
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             for block in soup.find_all('section', class_='EntryHorseList_Block'):
                 day_el = block.find('h3', class_='EntryHorseList_Day')
                 day = day_el.get_text(strip=True) if day_el else ''
@@ -1017,9 +1027,8 @@ def race_results_map(race_id):
     try:
         r = requests.get(f'https://race.netkeiba.com/race/result.html?race_id={race_id}',
                          headers=HEADERS, timeout=30)
-        r.encoding = 'utf-8'
         if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             table = None
             for t in soup.find_all('table'):
                 if '着順' in t.get_text():
@@ -1071,9 +1080,8 @@ def today_race_list():
     try:
         r = requests.get(f'https://race.netkeiba.com/top/race_list.html?kaisai_date={ds}',
                          headers=HEADERS, timeout=30)
-        r.encoding = 'utf-8'
         if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             for a in soup.find_all('a', href=True):
                 m = re.search(r'race_id=(\d{12})', a['href'])
                 if not m:
@@ -1130,9 +1138,8 @@ def race_list_for_date(ds):
     try:
         r = requests.get(f'https://race.netkeiba.com/top/race_list_sub.html?kaisai_date={ds}',
                          headers=HEADERS, timeout=30)
-        r.encoding = 'utf-8'
         if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
+            soup = BeautifulSoup(decode_page(r), 'html.parser')
             seen = set()
             for a in soup.find_all('a', href=True):
                 m = re.search(r'race_id=(\d{12})', a['href'])
