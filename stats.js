@@ -1,2 +1,2 @@
 // 本文件由 scrape_and_build.py 自动生成
-const 产驹统计 = {"エピファネイア": {"total": {"runs": 0, "wins": 0}, "surface": {}, "distance": {}}, "エフフォーリア": {"total": {"runs": 0, "wins": 0}, "surface": {}, "distance": {}}};
+const 产驹统计 = {"エピファネイア": {"total": {"runs": 15047, "wins": 1320}, "surface": {"芝": {"runs": 6173, "wins": 611}, "ダ": {"runs": 8746, "wins": 695}, "障": {"runs": 128, "wins": 14}}, "distance": {"中": {"runs": 2321, "wins": 239}, "长": {"runs": 323, "wins": 38}, "英": {"runs": 5742, "wins": 524}, "短": {"runs": 6661, "wins": 519}}}, "エフフォーリア": {"total": {"runs": 130, "wins": 25}, "surface": {"芝": {"runs": 119, "wins": 25}, "ダ": {"runs": 11, "wins": 0}}, "distance": {"英": {"runs": 84, "wins": 16}, "短": {"runs": 16, "wins": 2}, "中": {"runs": 30, "wins": 7}}}};
