@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>列表排版草案 · 虾铺开张中</title>
+<style>
+  :root{
+    --bg:#eeebe0;--paper:#f9f6ea;--ink:#22241f;--muted:#66625a;
+    --line:#e2ddcf;--line-strong:#cfc7b3;--brand:#1f3b2c;--brand2:#14281e;
+    --gold:#8a6a2a;--gold-soft:#f3ecda;--epi:#a8873f;--effo:#3d6f86;
+    --serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+    --ease:.16s ease;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
+  body{
+    font-family:"PingFang SC","Hiragino Sans","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    background-color:var(--bg);color:var(--ink);line-height:1.6;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.22'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 20px 70px}
+  header.top{text-align:center;margin-bottom:26px}
+  header.top h1{font-family:var(--serif);font-size:26px;letter-spacing:4px;color:var(--brand2)}
+  header.top p{color:var(--muted);font-size:13px;margin-top:6px}
+  .tabs{display:flex;gap:10px;justify-content:center;margin:22px 0 8px;flex-wrap:wrap}
+  .tab{
+    background:var(--paper);border:1px solid var(--line-strong);border-radius:2px;
+    padding:10px 20px;font-size:14px;font-weight:600;color:var(--brand);cursor:pointer;
+    font-family:inherit;letter-spacing:1px;transition:transform var(--ease),border-color var(--ease),background var(--ease),color var(--ease);
+  }
+  .tab:hover{border-color:var(--gold);transform:translateY(-1px)}
+  .tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .caption{
+    max-width:760px;margin:16px auto 22px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;
+  }
+  .caption b{color:var(--brand);font-weight:600}
+  .panel{}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:2px}
+
+  /* ---------- 通用表格 ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{
+    text-align:left;padding:10px 12px;font-size:12px;font-weight:600;letter-spacing:1px;
+    color:var(--brand);background:var(--bg);border-bottom:2px solid var(--line-strong);white-space:nowrap;
+  }
+  thead th.num{text-align:right}
+  tbody td{padding:9px 12px;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+  tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr.main:hover{background:#f4f0e6}
+  .nm{font-weight:700;font-size:13.5px}
+  .en{color:var(--muted);font-size:12px}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .dot.epi{background:var(--epi)}
+  .dot.effo{background:var(--effo)}
+  .sex{display:inline-block;padding:0 6px;border-radius:2px;font-size:12px;font-weight:600;color:#fff}
+  .sex.colt{background:#40597a}
+  .sex.filly{background:#9a5a6b}
+  .sex.geld{background:#6f6d66}
+  .status{display:inline-block;padding:0 6px;border-radius:2px;font-size:11px;font-weight:600;color:#fff}
+  .status.active{background:#3f6b52}
+  .status.retired{background:#6f6d66}
+  .status.breeding{background:var(--gold)}
+  .status.local{background:#75627f}
+  .status.unregistered{background:#7d6f5c}
+  .rec{font-weight:600}
+  .price{color:var(--muted);font-size:12px}
+  .muted{color:var(--muted)}
+  .gold{color:var(--gold)}
+
+  /* ---------- A：做减法 ---------- */
+  .caret{
+    display:inline-block;margin-left:10px;font-size:12px;color:var(--line-strong);
+    transition:transform .18s ease,color var(--ease);user-select:none;
+  }
+  td.namecell{display:flex;align-items:center;gap:8px}
+  td.namecell .en{color:var(--muted);font-size:12px}
+  tr.main{cursor:pointer}
+  tr.main:hover .caret{color:var(--gold)}
+  tr.main.open .caret{transform:rotate(180deg)}
+  tbody tr.detail td{
+    background:#f6f2e7;border-top:1px dashed var(--line-strong);
+    padding:0;white-space:normal;
+  }
+  .detail-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:6px 26px;padding:14px 16px;
+  }
+  .detail-grid div{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;border-bottom:1px dotted var(--line);padding:4px 0}
+  .detail-grid span{color:var(--muted)}
+  .detail-grid b{font-weight:600;text-align:right}
+
+  /* ---------- B：账本式 ---------- */
+  .ledger{display:grid;grid-template-columns:188px 1fr;gap:0;overflow:hidden}
+  .ledger-body tbody td{padding:8px 10px}
+  .ledger-body thead th{padding:9px 10px}
+  .ledger-more{padding:14px 16px;font-size:12px;border-top:1px solid var(--line)}
+  .bm .dot{width:6px;height:6px;margin-right:7px}
+  .bookmarks{border-right:1px solid var(--line);padding:14px 0;background:#fbf8f0}
+  .bm{
+    display:block;width:100%;text-align:left;background:transparent;border:0;
+    border-left:3px solid transparent;padding:10px 14px;font-family:inherit;
+    font-size:12.5px;color:var(--ink);cursor:pointer;white-space:nowrap;
+    transition:background var(--ease),color var(--ease),border-color var(--ease);
+  }
+  .bm:hover{background:#f4f0e6}
+  .bm.active{border-left-color:var(--gold);background:#f4f0e6;color:var(--brand);font-weight:700}
+  .bm b{float:right;margin-left:8px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+  .bm.active b{color:var(--gold)}
+  .bm-head{font-size:11px;letter-spacing:2px;color:var(--muted);padding:14px 16px 6px}
+  .ledger-body{min-width:0}
+
+  /* ---------- C：目录式 ---------- */
+  .chapter{padding:6px 0 4px}
+  .chapter-head{
+    display:flex;align-items:baseline;gap:12px;
+    padding:14px 4px 8px;border-bottom:1px solid var(--line-strong);margin-bottom:2px;
+  }
+  .chapter-head h2{font-family:var(--serif);font-size:17px;letter-spacing:2px;color:var(--brand);font-weight:700}
+  .chapter-head span{font-size:12px;color:var(--muted);letter-spacing:1px}
+  .crow{
+    display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) 120px 105px 110px;
+    gap:16px;align-items:center;
+    padding:8px 4px;border-bottom:1px dotted var(--line);font-size:13px;
+  }
+  .crow:hover{background:#f6f2e7}
+  .crow .r{text-align:right;font-variant-numeric:tabular-nums}
+  .crow .c1{display:flex;align-items:center;gap:8px;min-width:0}
+  .crow .c1 .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (max-width:720px){
+    .ledger{grid-template-columns:1fr}
+    .bookmarks{border-right:0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:8px}
+    .bm{width:auto;border-left:0;border-bottom:2px solid transparent;padding:8px 12px}
+    .bm.active{border-left:0;border-bottom-color:var(--gold)}
+    .bm b{float:none;margin-left:8px}
+    .bm-head{display:none}
+    .crow{grid-template-columns:1fr 70px;row-gap:2px}
+    .crow .c3,.crow .c4{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>产驹列表 · 三种排版草案</h1>
+    <p>用真实数据渲染（1454 匹，按赏金降序），点上面的按钮切换</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="a">A · 做减法</button>
+    <button class="tab" data-panel="b">B · 账本式</button>
+    <button class="tab" data-panel="c">C · 目录式</button>
+    <button class="tab" data-panel="d">D · A+B 合并（推荐）</button>
+  </div>
+
+  <div class="caption" id="capA">
+    主表只留 <b>6 列</b>：马名 / 生年 / 性别 / 成绩 / 赏金 / 状态。<br>
+    其余信息（母名、母父、调教师、价格、毛色、生日）<b>点一行才展开</b> —— 扫读最快，同时一列信息都没丢。
+  </div>
+  <div class="caption" id="capB" hidden>
+    左边是一栏常驻的 <b>账本书签</b>：全部 / 店长 / 儿子。<br>
+    最贴合「虾铺」的世界观，切换种马不用回页头，右侧始终是干净的列表。
+  </div>
+  <div class="caption" id="capC" hidden>
+    按 <b>出生年</b> 分成一个个章节，像赛马名簿的目录。<br>
+    适合「看看 2021 年这一代」这种浏览，但找某一匹具体马会比表格慢。
+  </div>
+
+  <div class="caption" id="capD" hidden>
+    左边常驻 <b>马名书签</b>（エピファネイア / エフフォーリア / 按生年），右边排 <b>9 列</b> 实数据。<br>
+    母父、生日、两个价格这些次要信息仍然点行展开 —— 主表不再有空荡荡的列。
+  </div>
+
+  <section id="panelA" class="panel card"></section>
+  <section id="panelB" class="panel card" hidden></section>
+  <section id="panelC" class="panel" hidden></section>
+  <section id="panelD" class="panel card" hidden></section>
+</div>
+
+<script src="data.js"></script>
+<script>
+const DATA = (typeof 产驹数据 !== 'undefined') ? 产驹数据 : [];
+const N = 12;
+
+const sireClass = {'エピファネイア':'epi','エフフォーリア':'effo'};
+const sexClass = {牡:'colt',牝:'filly',セ:'geld'};
+const statusCls = {'現役':'active','退役':'retired','退役・繁殖':'breeding','地方':'local','未登录':'unregistered'};
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function parseRec(r){const m=String(r||'').match(/(\d+)\s*战\s*(\d+)\s*胜/);return m?{r:+m[1],w:+m[2]}:{r:0,w:0};}
+function fmtPrize(p){ if(p==null) return ''; return p>=10000?(p/10000).toFixed(2)+'億':Math.round(p).toLocaleString()+'万'; }
+function fmtTrainer(t){ if(!t) return ''; t=String(t).replace(/^\[地\]/,'地'); if(t.length>1&&/^[栗美地]/.test(t)) return t[0]+'・'+t.slice(1); return t; }
+function shortPrice(v){ return v? String(v).replace(/[（(][^)）]*[)）]/g,'').trim() : ''; }
+function horseStatus(h){
+  if(h.status) return h.status;
+  if(h.trainer && /^\[?地/.test(h.trainer)) return '地方';
+  return '未登录';
+}
+const badge = h => { const s=horseStatus(h); return `<span class="status ${statusCls[s]||'retired'}">${esc(s)}</span>`; };
+const sexBadge = h => `<span class="sex ${sexClass[h.sex]||'geld'}">${esc(h.sex||'')}</span>`;
+const dot = h => `<span class="dot ${sireClass[h.sire]||''}"></span>`;
+
+const sorted = DATA.slice().sort((a,b)=>(b.prize==null?-1:b.prize)-(a.prize==null?-1:a.prize));
+
+/* ---------- A ---------- */
+function renderA(){
+  const rows = sorted.slice(0, N).map((h,i)=>`
+    <tr class="main" data-i="${i}">
+      <td class="namecell">${dot(h)}<span class="nm">${esc(h.name)}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
+      <td>${h.year!=null?esc(h.year):'—'}</td>
+      <td>${sexBadge(h)}</td>
+      <td class="rec">${esc(h.rec||'未出走')}</td>
+      <td class="num">${fmtPrize(h.prize)}</td>
+      <td>${badge(h)}</td>
+    </tr>
+    <tr class="detail" data-d="${i}" hidden><td colspan="6">
+      <div class="detail-grid">
+        <div><span>英字马名</span><b>${esc(h.en||'—')}</b></div>
+        <div><span>母名</span><b>${esc(h.dam||'—')}</b></div>
+        <div><span>母父</span><b>${esc(h.bms||'—')}</b></div>
+        <div><span>调教师</span><b>${esc(fmtTrainer(h.trainer)||'—')}</b></div>
+        <div><span>毛色 / 生日</span><b>${esc(h.color||'—')} · ${esc(h.bd||'—')}</b></div>
+        <div><span>募集价格</span><b>${esc(shortPrice(h.raise)||'—')}</b></div>
+        <div><span>拍卖价格</span><b>${esc(shortPrice(h.auction)||'—')}</b></div>
+      </div>
+    </td></tr>`).join('');
+  document.getElementById('panelA').innerHTML = `
+    <table>
+      <thead><tr><th>马名</th><th>生年</th><th>性别</th><th>成绩</th><th class="num">赏金</th><th>状态</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.querySelectorAll('#panelA tr.main').forEach(tr=>{
+    tr.addEventListener('click',()=>{
+      const i = tr.dataset.i;
+      const d = document.querySelector(`#panelA tr.detail[data-d="${i}"]`);
+      d.hidden = !d.hidden;
+      tr.classList.toggle('open', !d.hidden);
+    });
+  });
+}
+
+/* ---------- B ---------- */
+let bFilter = '全部';
+function renderB(){
+  const epi = sorted.filter(h=>h.sire==='エピファネイア').length;
+  const effo = sorted.filter(h=>h.sire==='エフフォーリア').length;
+  const list = sorted.filter(h=> bFilter==='全部' ? true : h.sire===bFilter).slice(0, N);
+  const rows = list.map(h=>`
+    <tr class="main">
+      <td>${dot(h)}<span class="nm">${esc(h.name)}</span></td>
+      <td>${h.year!=null?esc(h.year):'—'}</td>
+      <td>${sexBadge(h)}</td>
+      <td>${esc(h.dam||'—')}</td>
+      <td class="rec">${esc(h.rec||'未出走')}</td>
+      <td class="num">${fmtPrize(h.prize)}</td>
+      <td>${badge(h)}</td>
+    </tr>`).join('');
+  document.getElementById('panelB').innerHTML = `
+    <div class="ledger">
+      <nav class="bookmarks">
+        <button class="bm ${bFilter==='全部'?'active':''}" data-f="全部">全部 <b>${sorted.length}</b></button>
+        <button class="bm ${bFilter==='エピファネイア'?'active':''}" data-f="エピファネイア">店长 <b>${epi}</b></button>
+        <button class="bm ${bFilter==='エフフォーリア'?'active':''}" data-f="エフフォーリア">儿子 <b>${effo}</b></button>
+        <div class="bm-head">按生年</div>
+        ${[2021,2020,2019,2018,2017].map(y=>`<button class="bm" data-y="${y}">${y} 年 <b>${sorted.filter(h=>h.year===y).length}</b></button>`).join('')}
+      </nav>
+      <div class="ledger-body">
+        <table>
+          <thead><tr><th>马名</th><th>生年</th><th>性别</th><th>母名</th><th>成绩</th><th class="num">赏金</th><th>状态</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.querySelectorAll('#panelB .bm[data-f]').forEach(b=>{
+    b.addEventListener('click',()=>{ bFilter = b.dataset.f; renderB(); });
+  });
+}
+
+/* ---------- C ---------- */
+function renderC(){
+  const years = [2021,2020,2019,2018,2017];
+  document.getElementById('panelC').innerHTML = years.map(y=>{
+    const list = sorted.filter(h=>h.year===y);
+    const rows = list.slice(0,4).map(h=>`
+      <div class="crow">
+        <div class="c1">${dot(h)}<span class="nm">${esc(h.name)}</span><span class="muted" style="font-size:12px">${esc(h.en||'')}</span></div>
+        <div class="c2 muted" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.dam||'—')}</div>
+        <div class="c3">${sexBadge(h)} <span class="muted" style="font-size:12px">${esc(h.color||'')}</span></div>
+        <div class="c3 rec">${esc(h.rec||'未出走')}</div>
+        <div class="c4 r">${fmtPrize(h.prize)}</div>
+      </div>`).join('');
+    return `<div class="chapter">
+      <div class="chapter-head"><h2>${y} 年世代</h2><span>${list.length} 匹</span></div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+function show(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.panel===p));
+  ['a','b','c','d'].forEach(k=>{
+    document.getElementById('panel'+k.toUpperCase()).hidden = (k!==p);
+    document.getElementById('cap'+k.toUpperCase()).hidden = (k!==p);
+  });
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.panel)));
+
+/* ---------- D：A + B 合并 ---------- */
+let dSire = '全部', dYear = null;
+function renderD(){
+  const epi = sorted.filter(h=>h.sire==='エピファネイア').length;
+  const effo = sorted.filter(h=>h.sire==='エフフォーリア').length;
+  let pool = sorted;
+  if(dSire !== '全部') pool = pool.filter(h=>h.sire===dSire);
+  if(dYear) pool = pool.filter(h=>h.year===dYear);
+  const list = pool.slice(0, N);
+
+  const rows = list.map((h,i)=>`
+    <tr class="main" data-di="${i}">
+      <td class="namecell">${dot(h)}<span class="nm">${esc(h.name)}</span><span class="en">${esc(h.en||'')}</span><span class="caret">▾</span></td>
+      <td>${h.year!=null?esc(h.year):'—'}</td>
+      <td>${sexBadge(h)}</td>
+      <td>${esc(h.color||'—')}</td>
+      <td>${esc(h.dam||'—')}</td>
+      <td>${esc(fmtTrainer(h.trainer)||'—')}</td>
+      <td class="rec">${esc(h.rec||'未出走')}</td>
+      <td class="num">${fmtPrize(h.prize)}</td>
+      <td>${badge(h)}</td>
+    </tr>
+    <tr class="detail" data-dd="${i}" hidden><td colspan="9">
+      <div class="detail-grid">
+        <div><span>母父</span><b>${esc(h.bms||'—')}</b></div>
+        <div><span>生日</span><b>${esc(h.bd||'—')}</b></div>
+        <div><span>募集价格</span><b>${esc(shortPrice(h.raise)||'—')}</b></div>
+        <div><span>拍卖价格</span><b>${esc(shortPrice(h.auction)||'—')}</b></div>
+      </div>
+    </td></tr>`).join('');
+
+  const years = [2021,2020,2019,2018,2017];
+  document.getElementById('panelD').innerHTML = `
+    <div class="ledger">
+      <nav class="bookmarks">
+        <button class="bm ${dSire==='全部'&&!dYear?'active':''}" data-ds="全部">全部 <b>${sorted.length}</b></button>
+        <button class="bm ${dSire==='エピファネイア'?'active':''}" data-ds="エピファネイア"><span class="dot epi"></span>エピファネイア <b>${epi}</b></button>
+        <button class="bm ${dSire==='エフフォーリア'?'active':''}" data-ds="エフフォーリア"><span class="dot effo"></span>エフフォーリア <b>${effo}</b></button>
+        <div class="bm-head">按生年</div>
+        ${years.map(y=>`<button class="bm ${dYear===y?'active':''}" data-dy="${y}">${y} 年 <b>${sorted.filter(h=>h.year===y).length}</b></button>`).join('')}
+      </nav>
+      <div class="ledger-body">
+        <table>
+          <thead><tr><th>马名</th><th>生年</th><th>性别</th><th>毛色</th><th>母名</th><th>调教师</th><th>成绩</th><th class="num">赏金</th><th>状态</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="ledger-more muted">共 ${pool.length} 匹${pool.length>N?` · 这里只演示前 ${N} 匹`:''}</div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('#panelD .bm[data-ds]').forEach(b=>{
+    b.addEventListener('click',()=>{ dSire = b.dataset.ds; dYear = null; renderD(); });
+  });
+  document.querySelectorAll('#panelD .bm[data-dy]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const y = +b.dataset.dy;
+      dYear = (dYear === y) ? null : y;
+      renderD();
+    });
+  });
+  document.querySelectorAll('#panelD tr.main').forEach(tr=>{
+    tr.addEventListener('click',()=>{
+      const i = tr.dataset.di;
+      const d = document.querySelector(`#panelD tr.detail[data-dd="${i}"]`);
+      d.hidden = !d.hidden;
+      tr.classList.toggle('open', !d.hidden);
+    });
+  });
+}
+
+renderA(); renderB(); renderC(); renderD();
+
+const fromHash = (location.hash || '').replace('#','');
+show(['a','b','c','d'].includes(fromHash) ? fromHash : 'a');
+</script>
+</body>
+</html>

@@ -998,6 +998,9 @@ def merge_thisweek(new, old):
     m = {_tw_key(r): r for r in new}
     keep_from, _ = _week_bounds(1)
     for r in old:
+        # 丢弃历史乱码残留（netkeiba 2026-11 换编码期间产生的坏数据）
+        if '�' in json.dumps(r, ensure_ascii=False):
+            continue
         d = _runner_date(r)
         if d and d < keep_from:
             continue
